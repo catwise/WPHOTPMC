@@ -1,0 +1,30 @@
+
+/Volumes/WXSC/wphotpm/WPHotpm -imageid cosmos -ifile frames.list_199.tbl       \
+ -coadd ../coadds/1497p015_ac51 -clevel 3 -level 1b -int int -cov cov -unc unc \
+ -mdex mdet -qadir QA_tj                           \
+ -calpsfdir ../psflib/surveypsfs-032814 \
+ -calbname wise -calgridszX 9 -calgridszY 9 -v  \
+ -ofile results_tj/mdex.tbl                       \
+ -mdettab 1497p015_ac51-mdet-raw-1234-2.400.tbl     \
+ -namlis nl.WPHot_tj                             \
+ -meta results_tj/meta.tbl
+
+
+Ok gang, I have a COSMOS test field up and running with wphotpm.  Some 150 frames (per band) gives a coverage of mid-20's or so  (and a few odd with huge coverage, in the 50's).   This ~20's coverage is similar to the allwise coverage.
+
+coadds:  from the archive; 1497p015_ac51
+frames:   from the archive, i downloaded zillions 
+mdet:   from you guys, either Peter or Nelson provided : 1497p015_ac51-mdet-raw-1234-2.400.tbl
+psfs:  surveypsfs-032814
+
+
+Photometric and (static) astrometric results look nominal compared to ALLWISE.  I would say the code is working fine.   I have not looked at the PM stuff, I'll let JWF do that.
+
+(note however:  there is still the mag offset for wpro photometry, which otherwise looks fine;  this is either a zero point issue, or a normalization issue;  should flesh out once I start modifying code;  wapp is nominal;  one other mystery I'm not sure about :   mdet table has some 64K sources, but only 24K sources are extracted from wphotom ... maybe too low S/N ??  must be tracked down ***)
+
+*** Follow up:   used more frames, ~200, and the extraction was much higher, ~48K
+which means the coadd footprint is better covered with more frames.  the typical coverage per pixel is 25 or so.
+So things are looking nominal with wphotpm.
+
+
+

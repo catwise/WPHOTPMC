@@ -1,0 +1,50 @@
+ 
+c Namelist for WPHot.
+c Revision:   $Id: wex 8638 2010-09-28 03:12:33Z tim $
+c Run datime: 110212T072406Z
+c
+c !!! Auto-generated! Changes will be overwritten !!!
+c
+ 
+ &WPHpars
+ 
+ nx       = 2048
+ ny       = 2048
+ 
+ nxAWAIC = 2048
+ nyAWAIC = 2048
+ 
+ Naper    = 9
+ Rapc     = 8.25,5.5,8.25,11,13.75,16.5,19.25,22,24.75
+ 
+ Rannulus = 50
+ Rwidth   = 20
+ 
+ edgebuf  = 25
+ 
+ fwhm = 6.0,6.0,6.0,12.0
+ 
+ zero = 22.5,22.5,14.000,12.000
+ 
+ fbits = 28
+ 
+ adb_nmax = 1
+ adb_alloscale = 2
+ 
+ ireg = 1
+ jreg = 1
+ nbuf = 32
+ 
+ doSVB = .false.
+ 
+ 
+ CmosaicCorr = 0.152,0.180,0.665,0.616
+ 
+ Fcorr = 1., 1., 10., 10.
+ 
+ BGmax = 5000.0,5000.0,50000.0,15000.0
+ 
+ hname = '/Users/jarrett/wphotpm/bin/WPHotpm.header.multiframe.4bandcryo.tbl'
+
+ 
+ &end

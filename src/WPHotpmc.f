@@ -12,6 +12,7 @@ c  PROPER MOTION version:  2012 Feb 28, K. Marsh
 c  PROPER MOTION version:  2013 Mar 06, J. Fowler
 c  UnWISE (coadds) Processing, 1st version:  2017 March 29, THJ 
 c  UnWISE (coadds) Processing, 2nd version:  2017 May 03 ; THJ
+c  placed on github 
 c-------------------------------------------------------------------------------------
 
       program WPHot

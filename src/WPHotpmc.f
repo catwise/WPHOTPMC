@@ -1301,7 +1301,7 @@ c === TPC
             call exit (istat)
          endif
          
-         mepTable = -99.99  ! TJ 23aug2016
+         mepTable = -99.99  ! TJ 23aug2016  
          
          if (debug) write (6,*) 'allocate name table ',nsummax, nfmep
          
@@ -1913,26 +1913,27 @@ c                  call access(gztmp,zexist,erase)
             endif
 
 
-            zexist = .false.
-                erase = .false.
+c            zexist = .false.
+c                erase = .false.
 c                call access(msk(j,ib),zexist,erase)
- 		    	 zexist = Access(msk(j,ib)(1:LNBlnk(msk(j,ib))),' ') .eq. 0   ! JWF B60711
-                if (.not.zexist) then
-                  ! see if the file is compressed
-                  gztmp = msk(j,ib)(1:L) // '.gz'
-                  zexist = .false.
-                  erase = .false.
+c 		    	 zexist = Access(msk(j,ib)(1:LNBlnk(msk(j,ib))),' ') .eq. 0   ! JWF B60711
+c                if (.not.zexist) then
+c                  ! see if the file is compressed
+c                  gztmp = msk(j,ib)(1:L) // '.gz'
+c                  zexist = .false.
+c                  erase = .false.
 c                 call access(gztmp,zexist,erase)
- 		    	  zexist = Access(gztmp(1:LNBlnk(gztmp)),' ') .eq. 0   ! JWF B60711
-                  if (zexist) then
-                        msk(j,ib) = gztmp
-                  endif
-                endif
-            if(.not.zexist) then
-                     LLL = numchar (fram(j,ib))
-                     write (6,*) '***ERROR -- MSK frame does not exist: ',fram(j,ib)(1:LLL)
-                 call exit(9)
-            endif
+c 		    	  zexist = Access(gztmp(1:LNBlnk(gztmp)),' ') .eq. 0   ! JWF B60711
+c                  if (zexist) then
+c                        msk(j,ib) = gztmp
+c                  endif
+c                endif
+c            if(.not.zexist) then
+c                     LLL = numchar (fram(j,ib))
+c                     write (6,*) '***ERROR -- MSK frame does not exist: ',fram(j,ib)(1:LLL)
+c		     msk(j,ib) = "null"  
+c                 call exit(9)
+c            endif
 
 
             if ((zexist).and.(ireg.gt.1)) then   ! dead-zone mitigation
@@ -2952,7 +2953,7 @@ c            write (6,'(2i5,2x,a)') jfr,ib,fram(Jfr,ib)(1:72)
              ! Map from Jord=1:nactive (and order(jord)=1:nfr)) to position in pixel arrays
              pix_order(jord,ib) = npixfr
 
-           do NUT = 1,3
+           do NUT = 1,2 ! TJ 21July2017  , don't need to set the mask, assume all zero's
 
               if (NUT.eq.1) s0 = fram(Jfr,ib)
               if (NUT.eq.2) s0 = uncn(Jfr,ib)
@@ -3117,6 +3118,7 @@ c                 if (NUT.eq.1) write (6,*) i,j,idex,jdex
 
 
           enddo            ! NUT = 1-3
+
 
 
 c vvvvvvvvvvvvvvv debug vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv

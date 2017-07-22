@@ -109,6 +109,7 @@ c this sets the header length
 	if (smode) Lmax = 1630
 
 
+c	write (6,*) 'WRITE OUT DEBUG ',SingleFrame,smode,postcryo
 
 c==========================start of code added by CJG B30213============================
 
@@ -1759,6 +1760,10 @@ c                                                           ! MDET info
 c
         if (SingleFrame) go to 80                ! JWF B31122
 c                                                           ! MeanObsMJD
+
+c	write (6,*) 'DEBUG in WRITETABLE MeanObsMJD'
+c	write (6,*) ' Jsrc ',Jsrc,Table(Jsrc,33),Table(Jsrc,34)
+
         if (Table(Jsrc,33) .gt. 0.0) then
           JD0 = dble(Table(Jsrc,33)) + dble(Table(Jsrc,34)) !  JWF B30107
           write (str13,'(f13.6)') JD0   !  JWF B30107

@@ -14,7 +14,7 @@ C  in pieces, 100 pixels at a time.
 
       integer status,unit,readwrite,blocksize,naxes(2),nfound
       integer group,firstpix,nbuffer,npixels,i
-      real*8 cd1a,cd1b,cd2a,cd2b,tDB,rat,angle, tJD
+      real*8 cd1a,cd1b,cd2a,cd2b,tDB,rat,angle, tJD, tJDmin, tJDmax
       real*4 datamin,datamax,nullval,array(lsize)
       integer*4 bitpix,iarray(lsize)
       real*4 crval1,crval2,cdelt1,cdelt2,crot,crpix1,crpix2, zJD
@@ -66,8 +66,18 @@ c	write (6,*) nx,ny
 
 cccc
 
+		!!  using MIN/MAX to compute JDOBS
 	tJD = 0.
-        call ftgkyd(unit, 'MJD_OBS', tJD, comment, status)  ! Julian Date
+	tJDmin = 0.
+	tJDmax = 0.
+
+	call ftgkyd(unit, 'MJDMIN', tJDmin, comment, status)  ! min Julian Date
+	call ftgkyd(unit, 'MJDMAX', tJDmax, comment, status)  ! max Julian Date
+
+	tJD = (tJDmax+tJDmin)/2.  ! TJ 2017
+
+
+c        call ftgkyd(unit, 'MJD_OBS', tJD, comment, status)  ! Julian Date
 
 c	write (6,'(a,2f13.6)') 'JD ',tJD,gg+zz
 

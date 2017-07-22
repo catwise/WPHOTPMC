@@ -1,0 +1,10 @@
+rsync -auv /Users/jarrett/wphotpm/* .
+ git add
+ git add bin
+ git add src
+ git status
+ git commit -m "adding first version of wphotpmc"
+ git push
+
+
+

@@ -113,21 +113,24 @@ Photometry and source characterizaSon of the ALLWISE pipeline (IPAC)
 ## Take WPHot for a walkies …
 `./run_wphotpm.csh`
 
-[ADD IMAGE1]
+![image](https://user-images.githubusercontent.com/12055044/33471607-0abcaa38-d623-11e7-8778-41593d2b0dbc.png)
 
 ## WPHotpmc run script
 
-[ADD IMAGE2]
-[ADD IMAGE3]
+![image](https://user-images.githubusercontent.com/12055044/33471635-259a01fc-d623-11e7-86ee-79b7e5d63d97.png)
+
+![image](https://user-images.githubusercontent.com/12055044/33471654-3ed8449e-d623-11e7-81a8-6af6a4fe37f8.png)
 
 ## WPHotpmc run …
 
-[ADD IMAGE4]
-[ADD IMAGE5]
+![image](https://user-images.githubusercontent.com/12055044/33471679-54791efe-d623-11e7-9561-354a028de9a1.png)
+
+![image](https://user-images.githubusercontent.com/12055044/33471686-5c1720d4-d623-11e7-8e82-f95a3ae883e4.png)
+
 
 ## WPHotpmc run …
 
-[ADD IMAGE 6]
+![image](https://user-images.githubusercontent.com/12055044/33471693-66ab7bc6-d623-11e7-9bfb-c4a5616a046a.png)
 
 ## Photometry Validation
 * W`N`rchi2 distribution & error model
@@ -138,37 +141,37 @@ Photometry and source characterizaSon of the ALLWISE pipeline (IPAC)
 ## Validation
 * W`N`rchi2 distribution & error model
 
-[ADD IMAGE 7]
+![image](https://user-images.githubusercontent.com/12055044/33471700-72e50420-d623-11e7-893f-af1c3dc635b0.png)
 
 ## Validation
 * W`N`rchi2 distribution & error model
 
-[ADD IMAGE 8]
+![image](https://user-images.githubusercontent.com/12055044/33471708-7ac18614-d623-11e7-82aa-61ea16dff74b.png)
 
 ## Validation
 * W`N`rchi2 distribution & error model
 
-[ADD IMAGE 9]
+![image](https://user-images.githubusercontent.com/12055044/33471716-828c7160-d623-11e7-967e-cd64ce4e519f.png)
 
 ## Validation
 * W`N`rchi2 distribution & error model
 
-[ADD IMAGE 10]
+![image](https://user-images.githubusercontent.com/12055044/33471723-8ab23a1e-d623-11e7-9cf6-bd3f732c91ef.png)
 
 ## Validation
 * Auto-Compare WPRO to WAPP
 
-[ADD IMAGE 11]
+![image](https://user-images.githubusercontent.com/12055044/33471730-93d41c0c-d623-11e7-8726-9d1951dc8897.png)
 
 ## Validation
 * Cross-compare with ALLWISE::WPRO
 
-[ADD IMAGE 12]
+![image](https://user-images.githubusercontent.com/12055044/33471735-9b43c37a-d623-11e7-8419-30567a09477e.png)
 
 ## Validation
 * Cross-compare with ALLWISE::WAPP
 
-[ADD IMAGE 13]
+![image](https://user-images.githubusercontent.com/12055044/33471751-a5142a02-d623-11e7-9888-714b403dc8dc.png)
 
 ## Validation
 * Cross-compare with IRAC
@@ -178,7 +181,7 @@ Photometry and source characterizaSon of the ALLWISE pipeline (IPAC)
 ## Validation
 * Astrometry : vs.ALLWISE
 
-[ADD IMAGE 14]
+![image](https://user-images.githubusercontent.com/12055044/33471763-af16af2a-d623-11e7-8858-d91c513600c2.png)
 
 ## Validation
 * Astrometry : PM

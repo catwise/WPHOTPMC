@@ -12,7 +12,6 @@ c  PROPER MOTION version:  2012 Feb 28, K. Marsh
 c  PROPER MOTION version:  2013 Mar 06, J. Fowler
 c  UnWISE (coadds) Processing, 1st version:  2017 March 29, THJ 
 c  UnWISE (coadds) Processing, 2nd version:  2017 May 03 ; THJ
-c  placed on github 
 c-------------------------------------------------------------------------------------
 
       program WPHot
@@ -153,7 +152,7 @@ c      real*4, allocatable ::  DeltaMag (:,:)
       integer*2 Kdex, fmode
       integer nsr , nmax,  nfi, nf, nwpro,SingleFlag, mergetype
       integer npsf(4), npn(4), adb_nmax
-      integer miflag(19), fbits (32),  galflag (4)
+      integer miflag(19), fbits (32),  galflag (4), fatal
       integer region_order(225), region_check(225) ! TPC
 
       real*4 mmLogQ
@@ -510,6 +509,20 @@ c        write (6,*) Rapc(J)
 c       enddo
 
         if (verbose) write (6,*) 'namelist loaded'
+
+
+ccc  TJ  07-Sep-2017
+	fatal = 0
+        do I = 1,32
+                ibit = fbits(I)
+                if (ibit.ge.0) then
+                  fatal = fatal + (2**ibit)
+                else
+                        !quit
+                        goto 741
+                endif
+        enddo
+ 741     I = 0
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1411,6 +1424,7 @@ c       if ( wflag ( 1,ib ) .eq.1 ) then
           fname = Pnames(j,ib)
           MM = numchar(fname)
 c          if (verbose) write (6,'(a)') fname(1:MM)
+          write (6,'(a)') fname(1:MM)
           call readimage
      1          (nnx,nny,lsize,Larray,iLarray,fname,pcrval1,pcrval2,
      1          pcdelt1,ppix(ib),pcrot,pxcent(ib),pycent(ib), tJD)
@@ -1831,7 +1845,8 @@ c  now frame names and  get the pixel scale
                 
             msk(j,ib) = path(j)(1:L1) // '/' //
      1          basename(j)(1:L2) // '-w' // cc //
-     1          '-msk-' // level(1:LL) // '.fits'
+c     1          '-invvar-' // level(1:LL) // '.fits'       !  TJ 07Sep2017
+     1          '-std-' // level(1:LL) // '.fits'       !  TJ 07Sep2017
             L = numchar(msk(j,ib))
 
               uncn(j,ib) = path(j)(1:L1) // '/' //
@@ -1914,27 +1929,28 @@ c                  call access(gztmp,zexist,erase)
             endif
 
 
-c            zexist = .false.
-c                erase = .false.
+            zexist = .false.
+                erase = .false.
 c                call access(msk(j,ib),zexist,erase)
-c 		    	 zexist = Access(msk(j,ib)(1:LNBlnk(msk(j,ib))),' ') .eq. 0   ! JWF B60711
-c                if (.not.zexist) then
-c                  ! see if the file is compressed
-c                  gztmp = msk(j,ib)(1:L) // '.gz'
-c                  zexist = .false.
-c                  erase = .false.
+ 		    	 zexist = Access(msk(j,ib)(1:LNBlnk(msk(j,ib))),' ') .eq. 0   ! JWF B60711
+                if (.not.zexist) then
+                  ! see if the file is compressed
+		  L = numchar(msk(j,ib))  ! TJ 07Sep  ! TJ 07Sep
+                  gztmp = msk(j,ib)(1:L) // '.gz'
+                  zexist = .false.
+                  erase = .false.
 c                 call access(gztmp,zexist,erase)
-c 		    	  zexist = Access(gztmp(1:LNBlnk(gztmp)),' ') .eq. 0   ! JWF B60711
-c                  if (zexist) then
-c                        msk(j,ib) = gztmp
-c                  endif
-c                endif
-c            if(.not.zexist) then
-c                     LLL = numchar (fram(j,ib))
-c                     write (6,*) '***ERROR -- MSK frame does not exist: ',fram(j,ib)(1:LLL)
-c		     msk(j,ib) = "null"  
+ 		    	  zexist = Access(gztmp(1:LNBlnk(gztmp)),' ') .eq. 0   ! JWF B60711
+                  if (zexist) then
+                        msk(j,ib) = gztmp
+                  endif
+                endif
+            if(.not.zexist) then
+                     LLL = numchar (msk(j,ib))
+                     write (6,*) '***WARNING -- MSK frame does not exist: ',msk(j,ib)(1:LLL)
+		     msk(j,ib) = "null"  
 c                 call exit(9)
-c            endif
+            endif
 
 
             if ((zexist).and.(ireg.gt.1)) then   ! dead-zone mitigation
@@ -2922,12 +2938,15 @@ ccc  load the pixel arrays
       pix_order(:,:) = -999999999
 
       do 8002 ib=1,4
-        
+
+	icountbad = 0   ! TJ 07Sep2017
+
         do Jord=1,nactive
             xTRANS(Jord, ib) = 0
                 yTRANS(Jord, ib) = 0
             JD(Jord,ib) = 0.
         enddo
+
 
         if (any(wflag(1:nf,ib)==1)) then
 
@@ -2939,6 +2958,8 @@ ccc  load the pixel arrays
           Jfr = order (Jord)
 
           wflagactive (Jord,ib) = 0
+	  icountbad = 0   ! TJ 07Sep2017
+
 
             ! Consider only frame previously recognized as active for this band/region
           if ((fram(Jfr,ib)(1:4).ne.'null') .and. (Jfr.gt.0) .and.
@@ -2954,7 +2975,8 @@ c            write (6,'(2i5,2x,a)') jfr,ib,fram(Jfr,ib)(1:72)
              ! Map from Jord=1:nactive (and order(jord)=1:nfr)) to position in pixel arrays
              pix_order(jord,ib) = npixfr
 
-           do NUT = 1,2 ! TJ 21July2017  , don't need to set the mask, assume all zero's
+
+           do NUT = 1,3 ! TJ 21July2017  , don't need to set the mask, assume all zero's;   using INVVAR for mask
 
               if (NUT.eq.1) s0 = fram(Jfr,ib)
               if (NUT.eq.2) s0 = uncn(Jfr,ib)
@@ -2968,9 +2990,14 @@ c            write (6,'(2i5,2x,a)') jfr,ib,fram(Jfr,ib)(1:72)
               yTRANS(Jord, ib) = 0
             endif
 
-            call readimage
+
+	    if (s0(1:4).eq.'null') then  ! TJ 07Sep2017
+		Larray = 0.
+	    else
+              call readimage
      1             (nsizex,nsizey,lsize,Larray,iLarray,s0,
      1                  crval1,crval2,cdelt1,cdelt2,crot,crpix1,crpix2, tJD)
+	    endif
 
             if (NUT.eq.1) then
             nsx(ib) = nsizex
@@ -2993,7 +3020,14 @@ c              write (6,*) Jord, Jfr, ib, JD (Jord,ib),'  ',s0(1:132)
                   else
                     ! Integer mask array
 c                    iTarray(ii,jj) = iLarray(ic)
-		    iTarray(ii,jj) = int(Larray(ic))  ! unwise
+c	  	     iTarray(ii,jj) = int(Larray(ic))  ! unwise
+
+		    !TJ   STD mask biz
+		    iTarray(ii,jj) = 0  ! nominal
+		    if (Larray(ic).le.0.) then
+				iTarray(ii,jj) = 2  !  this should kill the pixel
+		    endif
+
                   endif
 
                   if ((SPIT).and.(NUT.le.2))  then 
@@ -3009,6 +3043,7 @@ c                    iTarray(ii,jj) = iLarray(ic)
                   endif
                 enddo
             enddo
+
 
 c            write (6,*) ib,'  image loaded with size: ',nsizex,nsizey,nsx(ib),nsy(ib)
 
@@ -3112,7 +3147,12 @@ c                 if (NUT.eq.1) write (6,*) i,j,idex,jdex
 
               if (NUT.eq.1) Array(idex,jdex,npixfr) = Tarray(i,j, NUT)
               if (NUT.eq.2) UNC(idex,jdex,npixfr)   = Tarray(i,j, NUT) 
-              if (NUT.eq.3) iMASK(idex,jdex,npixfr) = iTarray(i,j)
+
+	      if (NUT.eq.3) then
+		iMASK(idex,jdex,npixfr) = iTarray(i,j)
+		if (iTarray(i,j).gt.0) icountbad=icountbad+1
+              endif
+
 
  120            continue      ! i
             enddo            ! j
@@ -3120,6 +3160,9 @@ c                 if (NUT.eq.1) write (6,*) i,j,idex,jdex
 
           enddo            ! NUT = 1-3
 
+
+	  write (6,*) '**** Badpix from STD mask:  ',ib,Jfr,icountbad
+	  icountbad = 0
 
 
 c vvvvvvvvvvvvvvv debug vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -3174,6 +3217,9 @@ c ^^^^^^^^ debug ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       enddo ! Jord, ending loop in which we have ordered the read according to what was read in the previous grid
 
       endif                  ! any wflag
+
+c	   write (6,*) '**** Badpix from STD mask:  ',ib,icountbad  ! TJ 07Sep
+
 
  8002      continue            ! ib
 

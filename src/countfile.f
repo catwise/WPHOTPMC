@@ -5,7 +5,7 @@
 
 	open (unit=11,file=in)
 	nfi = 0
-	do j=1,99999
+	do j=1,9999999
 	 read (11,'(a)',end=99) cc
 
 	  L = numchar(cc)

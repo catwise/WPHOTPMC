@@ -95,7 +95,7 @@ c	write (6,*) ii,jj,ib
 			! coverage for the standard aperture
 			  if (MAP.eq.1) then
 				nsum_cov = nsum_cov + 1
-				if (nsum_cov.lt.9999) zcov(nsum_cov)= Cov (ii,jj,ib)
+				if (nsum_cov.lt.99999) zcov(nsum_cov)= Cov (ii,jj,ib)  ! THJ 07Jan2018
 			  endif
 
 			  del = dr - Rap

@@ -65,6 +65,8 @@ c got the header; get locations of keywords
 	s0 = 'Rsat4'
         call header_parse (header,s0,irsat4)
 
+	irsat3 = irsat1    !  THJ to mirror W3 to W1  ; 14Dec2017
+
 c	write (6,*) irsat1,irsat2,irsat3,irsat4
 c	call exit(0)
 

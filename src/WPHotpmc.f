@@ -12,6 +12,7 @@ c  PROPER MOTION version:  2012 Feb 28, K. Marsh
 c  PROPER MOTION version:  2013 Mar 06, J. Fowler
 c  UnWISE (coadds) Processing, 1st version:  2017 March 29, THJ 
 c  UnWISE (coadds) Processing, 2nd version:  2017 May 03 ; THJ
+c  UnWISE (coadds) Processing, 3rd version:  2018 Jan 21 ; THJ
 c-------------------------------------------------------------------------------------
 
       program WPHot
@@ -90,6 +91,7 @@ c      real*4, allocatable :: AppCorr (:,:)
       real*4  mfluxtmp(19), mefluxtmp(19), mzmag(19), mzerr(19)
       real*4  Rcoadd(4),cmag(19,4), cemag(19,4)
       real*4  cozero(5), IRACapcor(5), cov_ave(5), cov_std(5)
+      real*4  STDscale (4)    !  thj 22Jan2018
 
       real*4, allocatable :: COADD(:,:,:), COUNC(:,:,:),SVB(:,:,:), COCOV (:,:,:)
       integer*2, allocatable :: COmsk(:,:,:)
@@ -165,6 +167,7 @@ c      real*4, allocatable ::  DeltaMag (:,:)
         data      NamWrt,sort_subframes/.true.,.false./   ! JWF B30304
 
       data fluxcon/0.1088,0.1388,0.5952,0.2021,0.0454/   ! Spitzer conversion from MJy/st to Dn/s
+
 c      data Fcorr /31., 34., 40., 115./ ! WISE, old jarrett values based on WAPP repeatability
 c      data Fcorr /32., 37., 58., 221./ ! WISE, values based on FMasci theoretical values
 
@@ -194,7 +197,7 @@ c
         data      WarnAlloc8err/.false./              ! JWF B30402
         data      nTossedItAll/0/, BlendType/2/       ! JWF B30404
         data      mLogQfac/1.0/, tdbg/.false./        ! JWF B30419
-        data      BGtype/1,3,3,3/, BGtrimFrac/0.20/   ! JWF B30604
+        data      BGtype/1,3,1,3/, BGtrimFrac/0.20/   ! JWF B30604     !  TJ fixed the W3 slot to mirror W1 ; 14Dec2017
         data      SkThresh/9.9e25/                    ! JWF B30604
         data      SrcSubSNR/2.,2.,2.,2./              ! TPC B30605
         data      WarnBigFrameSig/9.9e25/             ! JWF B30711
@@ -206,6 +209,7 @@ c
      1     edgebuf, fwhm, Fcorr, BGmax, ChiFac,
      1     adb_nmax, adb_alloscale,
      1     ireg, jreg, nbuf,
+     1     STDscale,                                      !  THJ  22Jan2018 this new parameter scales the STD (unc) images
      1     doSVB, hname,  Hnull, MJD0, PMfac, minPMsig,   ! JWF B21207
      +     maxsteps, GenJD0posns, TossZeroFlux,           ! JWF B30117
      +     PMsubtract, PMinitADB, MeanObsEpochType,       ! JWF B30208
@@ -243,7 +247,7 @@ c
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
 c      data         vsn/'3.0  B31209'/ ! JWF B31203
-      data          vsn/'4.0  B70329'/ ! THJ 
+      data          vsn/'4.1  B80108'/ ! THJ 
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
 
@@ -404,6 +408,7 @@ c namelist
         read (10,WPHpars)
         close (10)
         if (NamWrt) write(6, WPHpars)  ! JWF B30304
+
         if (PMinitADB) print *,                                      ! JWF B30305
      +     'WARNING: PMinitADB selected; this is totally untested!'  ! JWF B30305
 
@@ -556,7 +561,7 @@ c       write (6,*) 'frames = ',nfi
 cccccccccccccccccccccccccccccccccccccccccccc
 c load the input list of frames
 
-      if (verbose) write (6,*) 'load input list of frames'
+      if (verbose) write (6,*) 'load input list of frames '
       call pinput (ifile,nfi,nf,path,basename,wflag,smode)
 
       if(nf .ne. nfi) then
@@ -694,7 +699,7 @@ c        metaf =  ofile(1:L2-4) // '_WPHOT-meta.tbl'
       if (verbose) write (6,'(a,a)') 'output meta  = ',metaf (1:L)
 
         call initmeta (metaf,imeta, level, ifile, namlis, nf, wflag,
-     1    psfdir,calbname,calgridX,calgridY, vsn)
+     1    psfdir,calbname,calgridX,calgridY, vsn, STDscale)   !  THJ 22Jan2018
 
 c  write to meta
       What = "nf"
@@ -1241,7 +1246,6 @@ c        end if
         iband = 0
         if (smode) iband = ib0
         call MetWr (imeta, iband, What, TYPE, metval, comment)
-
 
       allocate (tmpMAG(nf,19))
         if (.not.allocated(tmpMAG)) then
@@ -3071,7 +3075,7 @@ cccc  load the position arrays
               if ((ib.gt.1).and.(ijo.eq.1)) then
                 if ( any ( wflag ( 1:nf,1 ) ==1 ) ) then
                   if ( (XPos (Jsrc,Jord,1).eq.0.).and.(YPos (Jsrc,Jord,1).eq.0.)) then
-                  ijo = 0
+c                  ijo = 0    !  THJ 20Dec2017, this line kills Option 1b
                   endif
                 endif
               endif
@@ -3146,7 +3150,7 @@ cc here we actually load the sub-images Array, UNC, iMask
 c                 if (NUT.eq.1) write (6,*) i,j,idex,jdex
 
               if (NUT.eq.1) Array(idex,jdex,npixfr) = Tarray(i,j, NUT)
-              if (NUT.eq.2) UNC(idex,jdex,npixfr)   = Tarray(i,j, NUT) 
+              if (NUT.eq.2) UNC(idex,jdex,npixfr)   = Tarray(i,j, NUT)  * STDscale(ib)   !  THJ 22Jan2018 -- scale up the UNCs
 
 	      if (NUT.eq.3) then
 		iMASK(idex,jdex,npixfr) = iTarray(i,j)
@@ -4935,9 +4939,14 @@ c                  write (54,'(i6,i3,2f8.1,i6,i6,3f12.4)') Jsrc,ib,x0,y0,nannC,N
 
 
                   if (debug) then
-                  do KK=1,NaperC
-                    write (6,*) ib,KK,Rcirc(KK,ib), Rcirc(KK,ib)*cscale(ib), 
+c                  do KK=1,NaperC
+		   do KK=2,3    ! THJ 14Dec2017
+
+		     if ((Jsrc.gt.17000).and.(Jsrc.lt.19000)) then
+                    write (6,*) Jsrc,ib,KK,Rcirc(KK,ib), Rcirc(KK,ib)*cscale(ib),        
      1                     mfluxtmp(kk),mefluxtmp(kk),mzmag(kk),mzerr(kk), miflag(kk)
+		     endif
+
                   enddo
                   endif
 

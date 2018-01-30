@@ -1228,12 +1228,13 @@ c	write (6,*) 'DEBUG 6e'
 c	write (6,*) 'DEBUG 6f'
 
 	  value = cov_ave(ib)
-          if (value.gt.9999.) inull=1
+          if (value.gt.99999.) inull=1   !  thj 07Jan2018
           if (value.le.0.) inull = 1
           if (IzBad(value)) inull = 1
 
           format = 'f8.3'
 	  if (value.gt.999.) format = 'f8.2'
+	  if (value.gt.9999.) format = 'f8.1'
           call real_stringform (value,format, s0, L)
           if (inull.eq.1) then
                         call nullswap (s0,s1)

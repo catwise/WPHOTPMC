@@ -12,7 +12,7 @@ c  PROPER MOTION version:  2012 Feb 28, K. Marsh
 c  PROPER MOTION version:  2013 Mar 06, J. Fowler
 c  UnWISE (coadds) Processing, 1st version:  2017 March 29, THJ 
 c  UnWISE (coadds) Processing, 2nd version:  2017 May 03 ; THJ
-c  UnWISE (coadds) Processing, 3rd version:  2018 Jan 21 ; THJ
+c  STD and PSF scaling ; 2018, Jan/Feb  THJ
 c-------------------------------------------------------------------------------------
 
       program WPHot
@@ -92,6 +92,7 @@ c      real*4, allocatable :: AppCorr (:,:)
       real*4  Rcoadd(4),cmag(19,4), cemag(19,4)
       real*4  cozero(5), IRACapcor(5), cov_ave(5), cov_std(5)
       real*4  STDscale (4)    !  thj 22Jan2018
+      real*4  PSFuncscale (4)    !  thj 22Feb2018
 
       real*4, allocatable :: COADD(:,:,:), COUNC(:,:,:),SVB(:,:,:), COCOV (:,:,:)
       integer*2, allocatable :: COmsk(:,:,:)
@@ -202,6 +203,7 @@ c
         data      SrcSubSNR/2.,2.,2.,2./              ! TPC B30605
         data      WarnBigFrameSig/9.9e25/             ! JWF B30711
         data      SingleFrame,postcryo/2*.false./     ! JWF B31121
+        data      STDscale,PSFuncscale/8*1.0/         ! JWF B80226
 c
       namelist/WPHpars/nx,ny,nxAWAIC,nyAWAIC,
      1     zero, cozero, CmosaicCorr, fbits,
@@ -209,7 +211,7 @@ c
      1     edgebuf, fwhm, Fcorr, BGmax, ChiFac,
      1     adb_nmax, adb_alloscale,
      1     ireg, jreg, nbuf,
-     1     STDscale,                                      !  THJ  22Jan2018 this new parameter scales the STD (unc) images
+     1     STDscale,PSFuncscale,                          !  THJ  22Jan/Feb2018 these new parameters scale the STD (unc) and PSFunc images, respectively
      1     doSVB, hname,  Hnull, MJD0, PMfac, minPMsig,   ! JWF B21207
      +     maxsteps, GenJD0posns, TossZeroFlux,           ! JWF B30117
      +     PMsubtract, PMinitADB, MeanObsEpochType,       ! JWF B30208
@@ -228,7 +230,7 @@ c
 
       data max_mep_lines/999999/                        ! CJG B30228
 c
-      data MJD0/55400.d0/, nBadBlend/0/, nPMNaN/0/,     ! JWF B30130
+      data MJD0/56700.d0/, nBadBlend/0/, nPMNaN/0/,     ! JWF B30130 ;  THJ 24Feb2018
      +     PMfac/1.0/, minPMsig/0.02/, nAllZero/3*0/,   ! JWF B30130
      +     TargetRA,TargetDec/20*9.9d9/,                ! JWF B30227
      +     QuitEarly/.false./, WarnZeroFlux/.true./,    ! JWF B30227
@@ -247,7 +249,8 @@ c
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
 c      data         vsn/'3.0  B31209'/ ! JWF B31203
-      data          vsn/'4.1  B80108'/ ! THJ 
+c      data          vsn/'4.1  B80108'/ ! THJ 
+      data          vsn/'4.2  B80222'/ ! THJ
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
 
@@ -699,7 +702,7 @@ c        metaf =  ofile(1:L2-4) // '_WPHOT-meta.tbl'
       if (verbose) write (6,'(a,a)') 'output meta  = ',metaf (1:L)
 
         call initmeta (metaf,imeta, level, ifile, namlis, nf, wflag,
-     1    psfdir,calbname,calgridX,calgridY, vsn, STDscale)   !  THJ 22Jan2018
+     1    psfdir,calbname,calgridX,calgridY, vsn, STDscale,PSFuncscale)   !  THJ 22Jan2018, 22Feb2018
 
 c  write to meta
       What = "nf"
@@ -1493,7 +1496,7 @@ c          if (verbose) write (6,*) ib,'  PSFunc loaded with size: ',nnx,nny
             
             endif
 
-                PSFuncs(ii,jj,j,ib) = Larray(ic) 
+                PSFuncs(ii,jj,j,ib) = Larray(ic)  * PSFuncscale(ib)
 
            enddo
            enddo

@@ -1,11 +1,11 @@
 	subroutine initmeta (metaf,imeta,level, ifile, namlis, nfi, wflag,
-     1    psfdir,calbname,calgridX,calgridY, version, STDscale)
+     1    psfdir,calbname,calgridX,calgridY, version, STDscale,PSFuncscale)
 	character*(*) metaf,level, ifile, namlis,
      1      psfdir,calbname, version
 	integer imeta,L,L2,L3,L4,L5,numchar,ib, nfi
 	integer calgridX,calgridY
 	integer*2 wflag (nfi,4), temp (4)
-	real*4 STDscale(4)
+	real*4 STDscale(4),PSFuncscale(4)
 	
 
 	do ib=1,4
@@ -34,6 +34,7 @@ c	write (imeta,'(a,a)') '\ apcorr/psf base name: ',calbname(1:l5)
 	write (imeta,'(a,2i3)') '\ PSF FP grid size: ',calgridX,calgridY
 	write (imeta,'(a,4i4)') '\ bands engaged: ',(temp(ib),ib=1,4)
 	write (imeta,'(a,4F8.2)') '\ STD/UNC scaling: ',(STDscale(ib),ib=1,4)
+	write (imeta,'(a,4F8.2)') '\ PSF/UNC scaling: ',(PSFuncscale(ib),ib=1,4)
 
 	
 	write (imeta,'(a)') '\ '

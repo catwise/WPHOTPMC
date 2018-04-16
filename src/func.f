@@ -191,7 +191,8 @@ c
 		    flux(ib(i),n) = fluxb(nc)
 	 	endif
                 if (dbg) then
-                  print *,'func(179): ib(i), flux(ib(i),1):',ib(i),flux(ib(i),n)  ! JWF dbg
+                  print *,'func(179): n, ib(i), flux(ib(i),n):', ! JWF dbg
+     +            n,ib(i),flux(ib(i),n) 
                 end if
 	    enddo
  

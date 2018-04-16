@@ -13,6 +13,12 @@ c  PROPER MOTION version:  2013 Mar 06, J. Fowler
 c  UnWISE (coadds) Processing, 1st version:  2017 March 29, THJ 
 c  UnWISE (coadds) Processing, 2nd version:  2017 May 03 ; THJ
 c  STD and PSF scaling ; 2018, Jan/Feb  THJ
+c  W1 cryo scaling for PSFunc and UNC, JWF B80316
+c vsn 4.4  B80408: added STDfloor &c.
+c vsn 4.4  B80410: added file names to std uncertainty proc status msgs
+c vsn 4.4  B80411: ID unc frames by center pixel values
+c vsn 4.4  B80412: ID unc frames by pixel sums
+c 
 c-------------------------------------------------------------------------------------
 
       program WPHot
@@ -93,6 +99,8 @@ c      real*4, allocatable :: AppCorr (:,:)
       real*4  cozero(5), IRACapcor(5), cov_ave(5), cov_std(5)
       real*4  STDscale (4)    !  thj 22Jan2018
       real*4  PSFuncscale (4)    !  thj 22Feb2018
+      real*4  W1cryoPSFuncscale, W1AllWISEstdScale  !  JWF B80316
+      real*4  STDbias(4)                            !  JWF B80402
 
       real*4, allocatable :: COADD(:,:,:), COUNC(:,:,:),SVB(:,:,:), COCOV (:,:,:)
       integer*2, allocatable :: COmsk(:,:,:)
@@ -120,7 +128,7 @@ c     1     scdelt1(4),scdelt2(4),scrot(4),scrpix1(4),scrpix2(4)
       real*4  CoaddXY (2,4), ChiFac   ! chi2 threshold for chkvar
       real*4 dks                                            ! CJG B30320
 
-      real*8 ra0,dec0, xpix,ypix, tJD, sumJD
+      real*8 ra0, dec0, xpix,ypix, tJD, sumJD, MJDhibern8, MJDendCryoPSF
 
       integer NmerSTD(19,4), SingleFlg (19,4), coFLAG(19,4), NbannAve(4)
       integer N_M_wpro, M_M_wpro, M_M_var
@@ -130,11 +138,12 @@ c     1     scdelt1(4),scdelt2(4),scrot(4),scrpix1(4),scrpix2(4)
       integer calgridX,calgridY,nsrc, ntmp (4)
 
       integer*4 mfiles                                       ! CJG B30226
-        integer*4 kStat                                        ! JWF B30404
-        real*4    SatMag(2), SatFlux(2)                        ! JWF B30614
-        real*8    SatMJD                                       ! JWF B30614
-        logical*4 NotSat                                       ! JWF B30614
-        integer*4 Access                                       ! JWF B60711
+      integer*4 kStat                                        ! JWF B30404
+      real*4    SatMag(2), SatFlux(2)                        ! JWF B30614
+      real*8    SatMJD                                       ! JWF B30614
+      logical*4 NotSat                                       ! JWF B30614
+      integer*4 Access                                       ! JWF B60711
+      real*8    PixSum                                       ! JWF B80412
       integer   doreg, nbuf_band(4) ! TPC
       real*4    buf_as
 
@@ -162,10 +171,13 @@ c      real*4, allocatable ::  DeltaMag (:,:)
 
       logical debug,smode,verbose,unitest,SPIT, MIPS, NEP, SEP,erase,zexist, cexist (4), sexist (4), docentroid
       logical doweight, doSVB, pointless, IzBad, Circinus, doioc, gotscale (4), dosolo
-       logical mepwrite                              ! CJG B30228
-        logical*4 NamWrt           ! JWF B30304
-        logical*4 sort_subframes ! TPC
-        data      NamWrt,sort_subframes/.true.,.false./   ! JWF B30304
+      logical mepwrite                              ! CJG B30228
+      logical*4 NamWrt           ! JWF B30304
+      logical*4 sort_subframes ! TPC
+      data      NamWrt,sort_subframes/.true.,.false./   ! JWF B30304
+      logical STDfloor(4)               ! JWF B80408
+      data    STDfloor/4*.false./       ! JWF B80408
+      data    PixSum/0.0d0/             ! JWF B80412
 
       data fluxcon/0.1088,0.1388,0.5952,0.2021,0.0454/   ! Spitzer conversion from MJy/st to Dn/s
 
@@ -204,6 +216,9 @@ c
         data      WarnBigFrameSig/9.9e25/             ! JWF B30711
         data      SingleFrame,postcryo/2*.false./     ! JWF B31121
         data      STDscale,PSFuncscale/8*1.0/         ! JWF B80226
+        data      W1cryoPSFuncscale/1.0/              ! JWF B80316
+        data      W1AllWISEstdScale/1.0/              ! JWF B80316
+        data      STDbias/4*0.0/                      ! JWF B80402
 c
       namelist/WPHpars/nx,ny,nxAWAIC,nyAWAIC,
      1     zero, cozero, CmosaicCorr, fbits,
@@ -211,7 +226,9 @@ c
      1     edgebuf, fwhm, Fcorr, BGmax, ChiFac,
      1     adb_nmax, adb_alloscale,
      1     ireg, jreg, nbuf,
-     1     STDscale,PSFuncscale,                          !  THJ  22Jan/Feb2018 these new parameters scale the STD (unc) and PSFunc images, respectively
+     1     STDscale,PSFuncscale, STDbias, STDfloor,       ! THJ  22Jan/Feb2018, JWF B80316-B80408: these new parameters scale 
+     +     W1cryoPSFuncscale,W1AllWISEstdScale,           !      the STD (unc) and PSFunc images, respectively
+     +     MJDendCryoPSF, MJDhibern8,                     ! JWF B80322
      1     doSVB, hname,  Hnull, MJD0, PMfac, minPMsig,   ! JWF B21207
      +     maxsteps, GenJD0posns, TossZeroFlux,           ! JWF B30117
      +     PMsubtract, PMinitADB, MeanObsEpochType,       ! JWF B30208
@@ -231,7 +248,7 @@ c
       data max_mep_lines/999999/                        ! CJG B30228
 c
       data MJD0/56700.d0/, nBadBlend/0/, nPMNaN/0/,     ! JWF B30130 ;  THJ 24Feb2018
-     +     PMfac/1.0/, minPMsig/0.02/, nAllZero/3*0/,   ! JWF B30130
+     +     PMfac/1.0/, minPMsig/0.01/, nAllZero/3*0/,   ! JWF B30130,B80311
      +     TargetRA,TargetDec/20*9.9d9/,                ! JWF B30227
      +     QuitEarly/.false./, WarnZeroFlux/.true./,    ! JWF B30227
      +     poscon0/.true./, UseNonPMposns/.true./       ! JWF B30308
@@ -240,7 +257,9 @@ c
      +     MaxWarnBlendSwap/0/, CorrPMerr/.false./,     ! JWF B30520/B30521
      +     PMstepFac/100.0/, DumPvec/.false./, nbmax/3/ ! JWF B30524/B30529
      +     nFallbackMMM/0/, SatMag/8.0,7.0/,            ! JWF B30606/B30614
-     +     SatMJD/55468.7775/, WrtFSimg/.false./        ! JWF B30614/B30824
+     +     SatMJD/55468.7775/, WrtFSimg/.false./,       ! JWF B30614/B30824
+     +     MJDhibern8/55593.96d0/,                      ! JWF B80322
+     +     MJDendCryoPSF/55480.0d0/                     ! JWF B80322
 c
       integer*4 N_adb, nBorderViolators, nbordrej, nduprej, nnanposrej
       data N_adb/0/, nBorderViolators/0/, nbordrej/0/, nduprej/0/, nnanposrej/0/
@@ -248,16 +267,29 @@ c
       character*11 vsn                ! JWF B30507
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
-c      data         vsn/'3.0  B31209'/ ! JWF B31203
-c      data          vsn/'4.1  B80108'/ ! THJ 
-      data          vsn/'4.2  B80222'/ ! THJ
+      integer*4    IArgc              ! JWF B80404
+c     data         vsn/'3.0  B31209'/ ! JWF B31203
+c     data         vsn/'4.1  B80108'/ ! THJ 
+c     data         vsn/'4.2  B80222'/ ! THJ
+c     data         vsn/'4.3  B80322'/ ! JWF
+c     data         vsn/'4.4  B80402'/ ! JWF
+      data         vsn/'4.4  B80412'/ ! JWF
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
+      logical DidCryo                 ! JWF B80307
+      data    DidCryo/.false./        ! JWF B80307
+      integer*4, allocatable :: nBand(:) ! JWF B80318
+      real*8,    allocatable ::   MJD(:) ! JWF B80318
 
 c
-      call signon('WPHotpm')          ! JWF B30507
+      call signon('WPHotpmc')          ! JWF B30507
+      if (IArgc() .eq. 0) then
+        print *,'For instructions on running this program: ask Tom Jarrett'
+        call signoff('WPHotpmc')
+        stop
+      end if
 c
-      print *, 'Revision = $Id: WPHotpm.f 13022 2013-11-09 00:13:05Z tim $'
+c     print *, 'Revision = $Id: WPHotpm.f 13022 2013-11-09 00:13:05Z tim $'
 c
       iverify = 0  !  this is flipped to one by writeTABLE when an output file is written
 
@@ -560,7 +592,6 @@ c       write (6,*) 'frames = ',nfi
           call exit(istat)
         end if
 
-
 cccccccccccccccccccccccccccccccccccccccccccc
 c load the input list of frames
 
@@ -702,7 +733,8 @@ c        metaf =  ofile(1:L2-4) // '_WPHOT-meta.tbl'
       if (verbose) write (6,'(a,a)') 'output meta  = ',metaf (1:L)
 
         call initmeta (metaf,imeta, level, ifile, namlis, nf, wflag,
-     1    psfdir,calbname,calgridX,calgridY, vsn, STDscale,PSFuncscale)   !  THJ 22Jan2018, 22Feb2018
+     1    psfdir,calbname,calgridX,calgridY, vsn, STDscale,PSFuncscale,
+     +    W1cryoPSFuncscale,W1AllWISEstdScale,STDbias)   !  THJ 22Jan2018, 22Feb2018, JWF B80316,B80402
 
 c  write to meta
       What = "nf"
@@ -2918,7 +2950,21 @@ c          allocate (Mask(nsubxX,nsubyY,nactive,4))
           istat = 5
         end if
 
-
+      allocate (nBand(nactive_pix))                   ! JWF B80318
+      if (.not.allocated(nBand)) then
+        write (6,*) 'allocation failed for nBand'
+        istat = 5
+        call exit(istat)
+      end if
+      nBand = 0
+  
+      allocate (MJD(nactive_pix))                     ! JWF B80318
+      if (.not.allocated(MJD)) then
+        write (6,*) 'allocation failed for MJD'
+        istat = 5
+        call exit(istat)
+      end if
+      MJD = 1.0d0
 
 
       nallocate = nallocate + 1
@@ -2988,6 +3034,8 @@ c            write (6,'(2i5,2x,a)') jfr,ib,fram(Jfr,ib)(1:72)
               if (NUT.eq.1) s0 = fram(Jfr,ib)
               if (NUT.eq.2) s0 = uncn(Jfr,ib)
               if (NUT.eq.3) s0 = msk(Jfr,ib)
+              print *,'CatWISE - NUT, Jord, Jfr, ib:',NUT, Jord, Jfr, ib
+              print *,'CatWISE - s0: ',s0(1:lnblnk(s0))
 
             if (NUT.eq.1) then
               nsx(ib) = 0
@@ -3012,7 +3060,7 @@ c            write (6,'(2i5,2x,a)') jfr,ib,fram(Jfr,ib)(1:72)
 
             if (JD(Jord,ib).le.0.)  then
               JD (Jord,ib) = tJD
-c              write (6,*) Jord, Jfr, ib, JD (Jord,ib),'  ',s0(1:132)
+c             write (6,*)  Jord, Jfr, ib, JD (Jord,ib),'  ',s0(1:132)
             endif
 
             endif
@@ -3138,6 +3186,7 @@ c               debug = .true.
 
 cc here we actually load the sub-images Array, UNC, iMask
 
+            PixSum = 0.0d0
             do j=1,nsy(ib)
             jdel_yz = j - jquad_frame
             jdex = j0_reg(ib) + jdel_yz
@@ -3153,17 +3202,38 @@ cc here we actually load the sub-images Array, UNC, iMask
 c                 if (NUT.eq.1) write (6,*) i,j,idex,jdex
 
               if (NUT.eq.1) Array(idex,jdex,npixfr) = Tarray(i,j, NUT)
-              if (NUT.eq.2) UNC(idex,jdex,npixfr)   = Tarray(i,j, NUT)  * STDscale(ib)   !  THJ 22Jan2018 -- scale up the UNCs
+              if (NUT.eq.2) then
+                UNC(idex,jdex,npixfr) = Tarray(i,j, NUT)  * STDscale(ib)  ! THJ 22Jan2018 -- scale up the UNCs
+                if (UNC(idex,jdex,npixfr) .gt. 0.0) then
+                  if (STDfloor(ib)) then
+                    if (UNC(idex,jdex,npixfr) .lt. STDbias(ib))
+     +                  UNC(idex,jdex,npixfr)   =  STDbias(ib)
+                  else
+                    UNC(idex,jdex,npixfr) = UNC(idex,jdex,npixfr) + STDbias(ib)
+                  end if
+                end if
+                PixSum = PixSum + UNC(idex,jdex,npixfr)
+              end if
 
-	      if (NUT.eq.3) then
-		iMASK(idex,jdex,npixfr) = iTarray(i,j)
-		if (iTarray(i,j).gt.0) icountbad=icountbad+1
+	          if (NUT.eq.3) then
+	            iMASK(idex,jdex,npixfr) = iTarray(i,j)
+		        if (iTarray(i,j).gt.0) icountbad=icountbad+1
               endif
 
-
- 120            continue      ! i
+ 120        continue      ! i
             enddo            ! j
-
+            
+            if (NUT .eq. 2) then
+              MJD(npixfr)   = tJD
+              nBand(npixfr) = ib
+              s0 = uncn(Jfr,ib)
+              print *
+              print *,'CatWISE: uncertainty image ',s0(1:lnblnk(s0))
+              print *,'CatWISE: npixfr, MJD(npixfr), nBand(npixfr):',
+     +                 npixfr, MJD(npixfr), nBand(npixfr)
+              print *,'CatWISE PixSum:', PixSum
+              print *
+            end if
 
           enddo            ! NUT = 1-3
 
@@ -3267,6 +3337,41 @@ c              write(6,'(a,<nrow>(i4,a,i5,a,a9,a))') '    ',               ! JWF
 
 !!  at this point, all of the frames are loaded; source positions are
 !!  loaded: RAsublist, DECsublist, XPos, YPos
+c
+c----------------------- CatWISE-specific code changes - JWF B80316 --------------------
+c                                                   Assumes only 1 PSF per band, 641x641
+c                                                           Assumes images are 2048x2048
+      print *,'Start of CatWISE-specific cryo check'
+      do 12345 Jord = 1, nactive
+        print *,'Checking frame JORD =',Jord,' for cryo status; MJD =',MJD(Jord)
+        if ((MJD(Jord) .gt. 2.0d0) .and. (nBand(Jord) .eq. 1) .and.
+     +      (MJD(Jord) .lt. MJDhibern8)) then
+          if ((MJD(Jord) .lt. MJDendCryoPSF) .and. ! Peter's end-of-cryo-PSF epoch
+     +                   .not.DidCryo) then    
+            print *,'W1 cryo detected; Jord, MJD(Jord):', Jord, MJD(Jord)
+            print *,'W1 PSFunc rescaled by', W1cryoPSFuncscale
+            do 1234 jj = 1, 641
+              do 1233 ii = 1, 641
+                PSFuncs(ii,jj,1,1) = PSFuncs(ii,jj,1,1)*W1cryoPSFuncscale
+1233          continue
+1234        continue
+            DidCryo = .true.
+          end if
+          PixSum = 0.0d0
+          do 5432 j = 1, 2048
+            do 5431 i = 1, 2048
+              PixSum = PixSum + UNC(i,j,Jord)
+              UNC(i,j,Jord) = UNC(i,j,Jord)*W1AllWISEstdScale
+5431        continue
+5432      continue
+          print *,'W1 pre-hibernation std image for frame no.',Jord,
+     +            ' rescaled by', W1AllWISEstdScale
+          print *,'Previous PixSum =', PixSum
+        end if
+12345 continue
+      print *,'End of CatWISE-specific cryo check'
+c
+c-----------------End of CatWISE-specific code changes - JWF B80316 --------------------
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -4423,7 +4528,8 @@ c               call access(coaddfits(ib),zexist,erase)
 
              if ((ncx(ib).gt.ncoaddsize).or.(ncx(ib).gt.ncoaddsize)) then
                         write (6,*) 'ERROR -- coadd exceed ',
-     +                    'allocations; max = ncoaddsizexncoaddsize'
+     +                    'allocations; max = ncoaddsize x ncoaddsize'
+                        print *,'ncoaddsize =',ncoaddsize,'; squared =',ncoaddsize**2
                         call exit(9)
                   endif
 
@@ -4530,8 +4636,9 @@ c               call access(coufits(ib),zexist,erase)
                 if (verbose) write (6,*) ib,'  coadd unc image loaded '
 
                  if ((nnnx.gt.ncoaddsize).or.(nnny.gt.ncoaddsize)) then
-                        write (6,*) 'ERROR -- coadd exceed ',
-     +                    'allocations; max = ncoaddsizexncoaddsize'
+                        write (6,*) 'ERROR -- coadd unc exceed ',
+     +                    'allocations; max = ncoaddsize x ncoaddsize'
+                        print *,'ncoaddsize =',ncoaddsize,'; squared =',ncoaddsize**2
                         call exit(9)
                   endif
 
@@ -4590,7 +4697,8 @@ c               call access(cocovfits(ib),zexist,erase)
 
                   if ((nnnx.gt.ncoaddsize).or.(nnny.gt.ncoaddsize)) then
                         write (6,*) 'ERROR -- coadd cov exceed ',
-     +                     'allocations; max = ncoaddsizexncoaddsize'
+     +                    'allocations; max = ncoaddsize x ncoaddsize'
+                        print *,'ncoaddsize =',ncoaddsize,'; squared =',ncoaddsize**2
                         call exit(9)
                   endif
 
@@ -4630,9 +4738,9 @@ c                if (verbose)  write (6,*) comskfits(ib)(1:99)
                 if (verbose) write (6,*) ib,'  coadd mask image loaded'
 
                   if ((nnnx.gt.ncoaddsize).or.(nnny.gt.ncoaddsize)) then
-                        write (6,*)
-     1                   'ERROR -- coadd cov exceed allocations; ',
-     1                   'max = ncoaddsizexncoaddsize'
+                        write (6,*) 'ERROR -- coadd msk exceed ',
+     +                    'allocations; max = ncoaddsize x ncoaddsize'
+                        print *,'ncoaddsize =',ncoaddsize,'; squared =',ncoaddsize**2
                         call exit(9)
                   endif
 
@@ -5320,7 +5428,7 @@ c                  if (ib.eq.1) write (86,*) m,XSCprox(m)
         print *,'WPHotpm terminating; istat =         ',istat   ! JWF B21204
         write (6,'(a,f10.3,a)')' total WPHot DTime ',dd,' sec'
 
-        call signoff('WPHotpm')        ! JWF B30507
+        call signoff('WPHotpmc')        ! JWF B30507
 
       call exit (istat)
       end

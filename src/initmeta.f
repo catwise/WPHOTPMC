@@ -1,12 +1,13 @@
-	subroutine initmeta (metaf,imeta,level, ifile, namlis, nfi, wflag,
+  	subroutine initmeta (metaf,imeta,level, ifile, namlis, nfi, wflag,
      1    psfdir,calbname,calgridX,calgridY, version, STDscale,
-     +    PSFuncscale,W1cryoPSFuncscale,W1AllWISEstdScale,STDbias)
+     +    PSFuncscale,W1cryoPSFuncscale,PrehibSTDScale,STDbias)
 	character*(*) metaf,level, ifile, namlis,
      1      psfdir,calbname, version
 	integer imeta,L,L2,L3,L4,L5,numchar,ib, nfi
 	integer calgridX,calgridY
 	integer*2 wflag (nfi,4), temp (4)
-	real*4 STDscale(4),PSFuncscale(4),W1cryoPSFuncscale,STDbias(4)
+	real*4 STDscale(4),PSFuncscale(4),W1cryoPSFuncscale,STDbias(4),
+     +       PrehibSTDScale(4)  
 	
 
 	do ib=1,4
@@ -38,7 +39,7 @@ c	write (imeta,'(a,a)') '\ apcorr/psf base name: ',calbname(1:l5)
 	write (imeta,'(a,4F8.2)') '\ STD/UNC bias:    ',(STDbias(ib),ib=1,4)
 	write (imeta,'(a,4F8.2)') '\ PSF/UNC scaling: ',(PSFuncscale(ib),ib=1,4)
 	write (imeta,'(a,F8.2)')  '\ PSF/W1cryo UNC scaling: ',W1cryoPSFuncscale
-	write (imeta,'(a,F8.2)')  '\ STD/W1 AllWISE scaling: ',W1AllWISEstdScale
+	write (imeta,'(a,4F8.2)')  '\ STD/PreHibernate scaling: ',PrehibSTDScale
 
 	
 	write (imeta,'(a)') '\ '

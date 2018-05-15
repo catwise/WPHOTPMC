@@ -18,6 +18,8 @@ c vsn 4.4  B80408: added STDfloor &c.
 c vsn 4.4  B80410: added file names to std uncertainty proc status msgs
 c vsn 4.4  B80411: ID unc frames by center pixel values
 c vsn 4.4  B80412: ID unc frames by pixel sums
+c vsn 4.4  B80504: proc. last std frames; added W2 pre-hibernation scale
+c vsn 4.4  B80509: same as B80504 but compiled with Tom's gfortran options
 c 
 c-------------------------------------------------------------------------------------
 
@@ -99,7 +101,7 @@ c      real*4, allocatable :: AppCorr (:,:)
       real*4  cozero(5), IRACapcor(5), cov_ave(5), cov_std(5)
       real*4  STDscale (4)    !  thj 22Jan2018
       real*4  PSFuncscale (4)    !  thj 22Feb2018
-      real*4  W1cryoPSFuncscale, W1AllWISEstdScale  !  JWF B80316
+      real*4  W1cryoPSFuncscale, PrehibSTDScale(4)  !  JWF B80316
       real*4  STDbias(4)                            !  JWF B80402
 
       real*4, allocatable :: COADD(:,:,:), COUNC(:,:,:),SVB(:,:,:), COCOV (:,:,:)
@@ -217,7 +219,7 @@ c
         data      SingleFrame,postcryo/2*.false./     ! JWF B31121
         data      STDscale,PSFuncscale/8*1.0/         ! JWF B80226
         data      W1cryoPSFuncscale/1.0/              ! JWF B80316
-        data      W1AllWISEstdScale/1.0/              ! JWF B80316
+        data      PrehibSTDScale/4*1.0/               ! JWF B80316
         data      STDbias/4*0.0/                      ! JWF B80402
 c
       namelist/WPHpars/nx,ny,nxAWAIC,nyAWAIC,
@@ -227,7 +229,7 @@ c
      1     adb_nmax, adb_alloscale,
      1     ireg, jreg, nbuf,
      1     STDscale,PSFuncscale, STDbias, STDfloor,       ! THJ  22Jan/Feb2018, JWF B80316-B80408: these new parameters scale 
-     +     W1cryoPSFuncscale,W1AllWISEstdScale,           !      the STD (unc) and PSFunc images, respectively
+     +     W1cryoPSFuncscale,PrehibSTDScale,              !      the STD (unc) and PSFunc images, respectively
      +     MJDendCryoPSF, MJDhibern8,                     ! JWF B80322
      1     doSVB, hname,  Hnull, MJD0, PMfac, minPMsig,   ! JWF B21207
      +     maxsteps, GenJD0posns, TossZeroFlux,           ! JWF B30117
@@ -267,13 +269,8 @@ c
       character*11 vsn                ! JWF B30507
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
-      integer*4    IArgc              ! JWF B80404
-c     data         vsn/'3.0  B31209'/ ! JWF B31203
-c     data         vsn/'4.1  B80108'/ ! THJ 
-c     data         vsn/'4.2  B80222'/ ! THJ
-c     data         vsn/'4.3  B80322'/ ! JWF
-c     data         vsn/'4.4  B80402'/ ! JWF
-      data         vsn/'4.4  B80412'/ ! JWF
+      integer*4    IArgc,nCWchk       ! JWF B80404
+      data         vsn/'4.4  B80509'/ ! JWF
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
       logical DidCryo                 ! JWF B80307
@@ -734,7 +731,7 @@ c        metaf =  ofile(1:L2-4) // '_WPHOT-meta.tbl'
 
         call initmeta (metaf,imeta, level, ifile, namlis, nf, wflag,
      1    psfdir,calbname,calgridX,calgridY, vsn, STDscale,PSFuncscale,
-     +    W1cryoPSFuncscale,W1AllWISEstdScale,STDbias)   !  THJ 22Jan2018, 22Feb2018, JWF B80316,B80402
+     +    W1cryoPSFuncscale,PrehibSTDScale,STDbias)   !  THJ 22Jan2018, 22Feb2018, JWF B80316,B80402
 
 c  write to meta
       What = "nf"
@@ -3226,7 +3223,8 @@ c                 if (NUT.eq.1) write (6,*) i,j,idex,jdex
             if (NUT .eq. 2) then
               MJD(npixfr)   = tJD
               nBand(npixfr) = ib
-              s0 = uncn(Jfr,ib)
+              nCWchk        = npixfr
+              s0            = uncn(Jfr,ib)
               print *
               print *,'CatWISE: uncertainty image ',s0(1:lnblnk(s0))
               print *,'CatWISE: npixfr, MJD(npixfr), nBand(npixfr):',
@@ -3341,13 +3339,14 @@ c
 c----------------------- CatWISE-specific code changes - JWF B80316 --------------------
 c                                                   Assumes only 1 PSF per band, 641x641
 c                                                           Assumes images are 2048x2048
-      print *,'Start of CatWISE-specific cryo check'
-      do 12345 Jord = 1, nactive
-        print *,'Checking frame JORD =',Jord,' for cryo status; MJD =',MJD(Jord)
-        if ((MJD(Jord) .gt. 2.0d0) .and. (nBand(Jord) .eq. 1) .and.
+      print *,'Start of CatWISE-specific cryo check; no. files:', nCWchk
+      do 12345 Jord = 1, nCWchk                     
+        print *,'Checking frame JORD =', Jord,
+     +          ' for cryo status; MJD =', MJD(Jord)
+        if ((MJD(Jord) .gt. 2.0d0) .and.
      +      (MJD(Jord) .lt. MJDhibern8)) then
           if ((MJD(Jord) .lt. MJDendCryoPSF) .and. ! Peter's end-of-cryo-PSF epoch
-     +                   .not.DidCryo) then    
+     +        (nBand(Jord) .eq. 1) .and. .not.DidCryo) then    
             print *,'W1 cryo detected; Jord, MJD(Jord):', Jord, MJD(Jord)
             print *,'W1 PSFunc rescaled by', W1cryoPSFuncscale
             do 1234 jj = 1, 641
@@ -3361,11 +3360,12 @@ c                                                           Assumes images are 2
           do 5432 j = 1, 2048
             do 5431 i = 1, 2048
               PixSum = PixSum + UNC(i,j,Jord)
-              UNC(i,j,Jord) = UNC(i,j,Jord)*W1AllWISEstdScale
+              UNC(i,j,Jord) = UNC(i,j,Jord)*PrehibSTDScale(nBand(Jord))
 5431        continue
 5432      continue
-          print *,'W1 pre-hibernation std image for frame no.',Jord,
-     +            ' rescaled by', W1AllWISEstdScale
+          print *,'Pre-hibernation std image for frame no.',Jord,
+     +            ' band', nBand(Jord),
+     +            ' rescaled by', PrehibSTDScale(nBand(Jord))
           print *,'Previous PixSum =', PixSum
         end if
 12345 continue

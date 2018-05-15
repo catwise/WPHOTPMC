@@ -66,9 +66,9 @@ c
 !	Table(n,57)	=	nIters (no. of iterations in fit)
 !	Table(n,58)	=	nSteps (no. of steps on last iteration)
 !	Table(n,59)	=	pmqual (coded for nblend0,swapped,radial
-!                               position difference nonPM-MeanObsEpoch PM)
-!       Table(n,60:63)  =       fitradii for bands 1..4 [asec]
-!       Table(n,64:65)  =       P vector components
+!                   position difference nonPM-MeanObsEpoch PM)
+!   Table(n,60:63)  = fitradii for bands 1..4 [asec]
+!   Table(n,64:65)  = P vector components
 !
 !	where n is the source number (n = 1,...nsrc)
 !
@@ -1796,7 +1796,7 @@ c            print *,'back from unspew'  !  JWF dbg
 	       write(6,'(11x,"fraction of pixels with glitch masking:"'//
      *		',4f7.4)') ftroubles
 	       write(6,'(8x,"fraction of pixels rejected for any reason:"'//
-     *		',4f7.4)'),freject
+     *		',4f7.4)') freject
                 print *,'======================================================='
 	     endif ! (debug)
 !-----------------------------------------------------------------------

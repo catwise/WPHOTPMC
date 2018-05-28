@@ -2,8 +2,8 @@
 
 set LIBS = -lm
 set L1 = /usr/local/lib/libcfitsio.a
-set WCSlib = /Users/jarrett/libwcs/libwcs.a
+set WCSlib = /Volumes/CatWISE1/nrgarcia/libwcs/libwcs.a
 
-/usr/local/bin/gfortran  -ffixed-line-length-0 -fno-align-commons  -O2 -o $1 $1.f $L1 $LIBS $WCSlib
+/usr/local/bin/gfortran  -ffixed-line-length-0 -fno-align-commons  -O2 -o $1 $1.f $L1 $LIBS $WCSlib -lcurl
 
 # -mcmodel=medium

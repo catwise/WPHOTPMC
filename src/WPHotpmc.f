@@ -21,6 +21,7 @@ c vsn 4.4  B80412: ID unc frames by pixel sums
 c vsn 4.4  B80504: proc. last std frames; added W2 pre-hibernation scale
 c vsn 4.4  B80509: same as B80504 but compiled with Tom's gfortran options
 c vsn 4.5  B80524: call exit(64) if an img frame is missing
+c vsn 4.5  B80529: added more call exit(64) statements for more errors
 c 
 c-------------------------------------------------------------------------------------
 
@@ -271,7 +272,7 @@ c
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
       integer*4    IArgc,nCWchk       ! JWF B80404
-      data         vsn/'4.5  B80524'/ ! JWF
+      data         vsn/'4.5  B80529'/ ! JWF
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
       logical DidCryo                 ! JWF B80307
@@ -449,12 +450,12 @@ c namelist
         write (6,*) '***ERROR -- Bad -doreg parameter setting; ',
      1                'doreg,ireg,jreg=',doreg,ireg,jreg,'. ',
      1                'Exiting ...'
-        call exit(9)
+        call exit(64)
       endif
 
         if(ireg.lt.1 .or. ireg.gt.15 .or. jreg.lt.1 .or. jreg.gt.15 .or. ireg.ne.jreg) then
           print *,'***ERROR: Ireg or jreg out of range (1-15) or not equal:',ireg,jreg
-          call exit(1)
+          call exit(64)
         endif
         nreg = 0
         do j=1,ireg*jreg
@@ -462,12 +463,12 @@ c namelist
           if(kreg .le. 0) exit
           if(kreg .gt. ireg*jreg) then
             print *,'***ERROR: Requested region ',kreg,' is out of range.'
-            call exit(1)
+            call exit(64)
           endif
         region_check(kreg) = region_check(kreg) + 1
           if(region_check(kreg) .gt. 1) then
             print *,'***ERROR: Region ',kreg,' specified more than once.'
-            call exit(1)
+            call exit(64)
           endif
           nreg = nreg + 1
         enddo
@@ -485,6 +486,7 @@ c       if(nreg .lt. ireg*jreg .or. doreg) print *,'!!! Not all regions being pr
 
         if ((BlendType .lt. 1) .or. (BlendType .gt. 2)) then
           print *,'***ERROR: illegal BlendType specification:', BlendType
+          call exit(64)
         end if
 
 c
@@ -599,7 +601,7 @@ c load the input list of frames
       if(nf .ne. nfi) then
           print *,'***ERROR: countfile and pinput disagree about the frame count: ',
      1            nfi, ' vs. ', nf
-          call exit(5)
+          call exit(64)
         endif        
 
 c       don't need nfi below here anymore - TPC
@@ -706,8 +708,8 @@ c            jreg = 2
       if (verbose) write (6,*) 'frames = ',nf
 
       if (nf.lt.1) then
-         write (6,*) 'ERROR -- number of frames is to small ; exiting '
-         call exit(9)
+         write (6,*) 'ERROR -- number of frames is too small ; exiting '
+         call exit(64)
       endif
 
       do j=1,nf
@@ -1383,7 +1385,7 @@ c    +              stat = kStat)           ! JWF B30404
      +              stat = kStat)           ! JWF B30404
           if (kStat .ne. 0) then
             print *,'***ERROR: cannot allocate mep arrays; kStat =',kStat
-            istat = kStat
+            istat = 64
           end if
       endif
 
@@ -1494,7 +1496,7 @@ c          if (verbose) write (6,*) ib,'  PSFunc loaded with size: ',nnx,nny
 
          if (nnx.ne.npsf(ib)) then
             write (6,*) 'ERROR -- PSF and PSFunc have mismatched dimensions'
-            call exit (9)
+            call exit (64)
          endif
 
          ic = 0
@@ -1752,7 +1754,7 @@ c      write (6,*) crval1,crval2
                    L = numchar(coaddfits(ib))
                    write (6,'(a)') coaddfits(ib)(1:L)
                write (6,*) '   exiting'
-                   call exit(9)
+                   call exit(64)
 
               endif
          endif
@@ -1763,7 +1765,7 @@ c      write (6,*) crval1,crval2
 
         if(cband0 .lt. 1) then
            write(6,*) '***ERROR: No valid Coadd found for assigning cband0.'
-           call exit(1)
+           call exit(64)
         endif
 
       do ib=1,4
@@ -1831,12 +1833,12 @@ c        What = "zero"
 
         if (zmin.le.0.) then
                 write (6,*) 'ERROR -- zero mags incorrectly set ',zero
-                call exit(9)
+                call exit(64)
         endif
 
         if ((nx.le.0).or.(ny.le.0)) then
                 write (6,*) 'ERROR -- initial array size too small ',nx,ny
-                call exit(9)
+                call exit(64)
         endif
 
 
@@ -1963,7 +1965,7 @@ c                  call access(gztmp,zexist,erase)
             if(.not.zexist) then
                      LLL = numchar (fram(j,ib))
                      write (6,*) '***ERROR -- UNC frame does not exist: ',fram(j,ib)(1:LLL)
-                 call exit(9)
+                 call exit(64)
             endif
 
 
@@ -1988,6 +1990,7 @@ c                 call access(gztmp,zexist,erase)
                      write (6,*) '***WARNING -- MSK frame does not exist: ',msk(j,ib)(1:LLL)
 		     msk(j,ib) = "null"  
 c                 call exit(9)
+                  call exit(64)
             endif
 
 
@@ -3332,7 +3335,7 @@ c              write(6,'(a,<nrow>(i4,a,i5,a,a9,a))') '    ',               ! JWF
         if(npixfr .gt. nactive_pix) then
           print *,'***ERROR: Read pixels for ',npixfr,' bandframes. This exceeds the ',
      1            nactive_pix,' bandframes allocated.'
-          call exit(8)
+          call exit(64)
         endif
 
 !!  at this point, all of the frames are loaded; source positions are
@@ -3667,7 +3670,7 @@ c      enddo
 
           if (istatus /= 0) then      
              write (6,*) 'ERROR -- WPRO fails; status non-zero  ',istatus
-             call exit(istatus)
+             call exit(64)
         endif
 
 c      write (6,*) ' '
@@ -3770,7 +3773,7 @@ c         endif
        if (nwpro_out.le.0) then
 c                 write (6,*) 'ERROR -- WPRO fails, no sources extracted'
              write (6,*) 'WARNING -- no sources extracted ', Nwpro_out
-c                 call exit(9)
+                 call exit(64)
           endif
 
 
@@ -3974,7 +3977,7 @@ c              Count just good frames
                  if (istat .ne. 0) then
                    print *,'ERROR: cannot allocate temp MEP arrays; ',
      +                     'Stat =',iStat,', nfmep = ',nfmep
-                   call exit(istat)
+                   call exit(64)
                  end if
              meptable_tmp = -99
              namtable_tmp = '99999z999'
@@ -4532,7 +4535,7 @@ c               call access(coaddfits(ib),zexist,erase)
                         write (6,*) 'ERROR -- coadd exceed ',
      +                    'allocations; max = ncoaddsize x ncoaddsize'
                         print *,'ncoaddsize =',ncoaddsize,'; squared =',ncoaddsize**2
-                        call exit(9)
+                        call exit(64)
                   endif
 
             ic = 0
@@ -4563,7 +4566,7 @@ c               call access(coaddfits(ib),zexist,erase)
              write (6,*) 'ERROR -- coadd does not exist:'
              L = numchar(coaddfits(ib))
             write (6,'(a)') coaddfits(ib)(1:L)
-                 call exit(9)
+                 call exit(64)
 
             endif
 
@@ -4641,7 +4644,7 @@ c               call access(coufits(ib),zexist,erase)
                         write (6,*) 'ERROR -- coadd unc exceed ',
      +                    'allocations; max = ncoaddsize x ncoaddsize'
                         print *,'ncoaddsize =',ncoaddsize,'; squared =',ncoaddsize**2
-                        call exit(9)
+                        call exit(64)
                   endif
 
                   ic = 0
@@ -4701,7 +4704,7 @@ c               call access(cocovfits(ib),zexist,erase)
                         write (6,*) 'ERROR -- coadd cov exceed ',
      +                    'allocations; max = ncoaddsize x ncoaddsize'
                         print *,'ncoaddsize =',ncoaddsize,'; squared =',ncoaddsize**2
-                        call exit(9)
+                        call exit(64)
                   endif
 
                   ic = 0
@@ -4743,7 +4746,7 @@ c                if (verbose)  write (6,*) comskfits(ib)(1:99)
                         write (6,*) 'ERROR -- coadd msk exceed ',
      +                    'allocations; max = ncoaddsize x ncoaddsize'
                         print *,'ncoaddsize =',ncoaddsize,'; squared =',ncoaddsize**2
-                        call exit(9)
+                        call exit(64)
                   endif
 
                   ic = 0

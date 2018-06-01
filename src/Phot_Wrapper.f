@@ -77,7 +77,7 @@ c                  if (wflag(1,ib) .gt. 0) then
 	allocate(flux(nf,4), sigflux(nf,4),   stat=stat)
 	if(stat .ne. 0) then
 	  print *,'ERROR (phot_wrapper): cannot allocate flux/sigflux array; Stat =',stat
-	  call exit(1)
+	  call exit(64)
 	endif
 
 	do ib=1,4

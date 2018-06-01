@@ -23,7 +23,7 @@ c	write (6,*) 'ere ',WCS
 
    	  if ( WCS .lt. 0) then
                print *,'*** WCSinit ERROR ',WCS
-              call exit(1)
+              call exit(64)
           endif
 
 	endif
@@ -35,7 +35,7 @@ c	write (6,*) 'ere ',WCS
 
         if(offscl .lt. 0) then
                  print *,'*** WCSPlay ERROR ',offscl,': Can''t convert.'
-                 call exit(1)
+                 call exit(64)
          endif
 
 	x0 = x8 * 1.0

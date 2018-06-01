@@ -22,7 +22,8 @@ c vsn 4.4  B80504: proc. last std frames; added W2 pre-hibernation scale
 c vsn 4.4  B80509: same as B80504 but compiled with Tom's gfortran options
 c vsn 4.5  B80524: call exit(64) if an img frame is missing
 c vsn 4.5  B80529: added more call exit(64) statements for more errors
-c 
+c vsn 4.5  B80601: changed some call exit's in wpro_v6.f, WHatPos.f,
+c                  and Phot_Wrapper.f
 c-------------------------------------------------------------------------------------
 
       program WPHot
@@ -272,7 +273,7 @@ c
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
       integer*4    IArgc,nCWchk       ! JWF B80404
-      data         vsn/'4.5  B80529'/ ! JWF
+      data         vsn/'4.5  B80601'/ ! JWF
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
       logical DidCryo                 ! JWF B80307

@@ -397,7 +397,8 @@ c
 	    call wcsinit(Hfits,iwcs)
 	    if ( iwcs < 0) then
 		print *,'*** WCSinit ERROR',iwcs
-		call exit(1)
+c		call exit(1)    ! JWF B80601 
+		call exit(64)   !
 	    endif
 	    WCS(ifs,ib) = iwcs
 

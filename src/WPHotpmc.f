@@ -24,6 +24,13 @@ c vsn 4.5  B80524: call exit(64) if an img frame is missing
 c vsn 4.5  B80529: added more call exit(64) statements for more errors
 c vsn 4.5  B80601: changed some call exit's in wpro_v6.f, WHatPos.f,
 c                  and Phot_Wrapper.f
+c vsn 4.5  B90622: fixed units error on slope/intercept covariance used in
+c                  wpro_v6 to translate motion-solution position from JD0
+c                  to MJD0; error was small because cov was small due to
+c                  centering the intercept location
+c
+c NOTE: see lines 4502-4506 for cosmetic fix on next redelivery
+c       also: this is not the unc-smooth version; see the unc-smooth subdirectory
 c-------------------------------------------------------------------------------------
 
       program WPHot
@@ -273,7 +280,7 @@ c
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
       integer*4    IArgc,nCWchk       ! JWF B80404
-      data         vsn/'4.5  B80601'/ ! JWF
+      data         vsn/'4.5  B90622'/ ! JWF
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
       logical DidCryo                 ! JWF B80307
@@ -4497,6 +4504,11 @@ c              COCOVfits(ib) = coname(1:LC) // '-w' // cc // '-invvar-' // cleve
 	write (6,'(a,a)') 'coadd unc ',COUfits(1)(1:99)
 	write (6,'(a,a)') 'coadd cov  ',COCOVfits(1)(1:99)
 	write (6,'(a,a)') 'coadd msk ',COmskfits(1)(1:99)
+c                                                       ! NOTE JWF B81128: I think
+c                                                       !      the above should be:
+c	write (6,'(a,a)') 'coadd unc ',COUfits(ib)(1:99)
+c	write (6,'(a,a)') 'coadd cov  ',COCOVfits(ib)(1:99)
+c	write (6,'(a,a)') 'coadd msk ',COmskfits(ib)(1:99)
 
 
                L = numchar(coaddfits(ib))

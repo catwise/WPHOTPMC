@@ -2306,10 +2306,14 @@ c
 		  Table(m,32) = sigpmd			! Dec PM unc
                   pmra  = p(2*mblend+1)/365.25d0     ! JWF B21127  [deg/day]
                   pmdec = p(2*mblend+2)/365.25d0     ! JWF B21127  [deg/day]
-                  Table(m,35) = sqrt(sigx(nn)**2 + ((MJD0-JD0)*sigpmr/365.25)**2
-     +                                           + 2.0*(MJD0-JD0)*covRpmR)
-                  Table(m,36) = sqrt(sigy(nn)**2 + ((MJD0-JD0)*sigpmd/365.25)**2
-     +                                           + 2.0*(MJD0-JD0)*covDpmD)
+c                 Table(m,35) = sqrt(sigx(nn)**2 + ((MJD0-JD0)*sigpmr/365.25)**2
+c    +                                           + 2.0*(MJD0-JD0)*covRpmR)
+c                 Table(m,36) = sqrt(sigy(nn)**2 + ((MJD0-JD0)*sigpmd/365.25)**2
+c    +                                           + 2.0*(MJD0-JD0)*covDpmD)
+                  Table(m,35) = sqrt(sigx(nn)**2 + ((MJD0-JD0)*sigpmr/365.25)**2  ! JWF B90622:
+     +                                           + 2.0*(MJD0-JD0)*covRpmR/365.25) ! cov has
+                  Table(m,36) = sqrt(sigy(nn)**2 + ((MJD0-JD0)*sigpmd/365.25)**2  ! units of
+     +                                           + 2.0*(MJD0-JD0)*covDpmD/365.25) ! asec/yr
 c
                   if (DumPvec) write (77,'(6F10.5,2F12.7,2I10,I4)')
      +               3600.0*p(nc), 3600.0*p(mblend+nc),

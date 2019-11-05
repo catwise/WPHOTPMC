@@ -27,7 +27,8 @@ c                  and Phot_Wrapper.f
 c vsn 4.6  B80622: pole version; bigger maxframesin in wpro.inc
 c vsn 4.7  B80625: pole version; don't call exit(64) for missing epoch files
 c vsn 4.8  B91103: pole version; increased maxframes &c. again in wpro_pole.inc
-c-------------------------------------------------------------------------------------
+c vsn 4.8  B91104: pole version; increased maxframesin from 240 to 320
+c--------------------------------------------------------------------------------
 
       program WPHot
 
@@ -276,7 +277,7 @@ c
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
       integer*4    IArgc,nCWchk       ! JWF B80404
-      data         vsn/'4.8  B91103'/ ! JWF
+      data         vsn/'4.8  B91104'/ ! JWF
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
       logical DidCryo                 ! JWF B80307

@@ -15,7 +15,8 @@ c     integer, parameter :: maxframes = 320  ! maximum coverage x 4   !  B80622 
 
 c	  integer, parameter :: maxframesin = 112  ! maximum # input frames   ; 08Jan2018  THJ
 c     integer, parameter :: maxframesin = 160  ! maximum # input frames   ! B80622 JWF
-      integer, parameter :: maxframesin = 240  ! maximum # input frames   ! B91103 JWF
+c     integer, parameter :: maxframesin = 240  ! maximum # input frames   ! B91103 JWF
+      integer, parameter :: maxframesin = 320  ! maximum # input frames   ! B91104 JWF
                            ! in any one band
 
 c     integer, parameter :: maxpix = 50000 	   ! maximum number of pixels

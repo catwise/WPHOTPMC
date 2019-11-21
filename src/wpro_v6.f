@@ -80,103 +80,107 @@ c
 !-----------------------------------------------------------------------------
 
         implicit real*4 (a-h,o-z)
-	implicit integer (i-n)
+    	implicit integer (i-n)
 
         integer*4 nf0                ! JWF B30427
         integer*2 order(nf0)         ! JWF B30503
         character*200 basename(nf0)  ! JWF B30427
 
 ! Set some parameter values.
-	include 'wpro.inc'
-	integer, parameter :: maxblend = 100
-	integer, parameter :: maxblend2 = 200
-	integer, parameter :: maxbands = 4
-	real, parameter :: dtor = 0.0174533
-	real, parameter :: tle = 1.08574	! 2.5*log10(e)
+		include 'wpro.inc'
+		integer, parameter :: maxblend = 100
+		integer, parameter :: maxblend2 = 200
+		integer, parameter :: maxbands = 4
+		real, parameter :: dtor = 0.0174533
+		real, parameter :: tle = 1.08574	! 2.5*log10(e)
 
 ! Declare the input arrays.
-   	real(8) RAlist(nmax), DEClist(nmax),JD(nf,4)
-   	real(4) Array(nnx,nny,nfpix),Unc(nnx,nny,nfpix)
-	real(4) psfs(npsize,npsize,npnmax,4)
-	real(4) psfuncs(npsize,npsize,npnmax,4)
-	real(4) pxcent(4),pycent(4),ppix(4),fwhm(4)
-	real(4) Xpos(nmax,nf,4), Ypos(nmax,nf,4), Rstann(4), Rstwid(4)
-	real(4) LBACK(nmax,nf,4), LSIG(nmax,nf,4), Lconf(nmax,nf,4)
-	real(4) MAGSTD(nmax,4), eMAGSTD(nmax,4), Rsat(nall,4), zero(4)
-c	real(4) Table(nmax,32)
+   	   	real(8) RAlist(nmax), DEClist(nmax),JD(nf,4)
+   	   	real(4) Array(nnx,nny,nfpix),Unc(nnx,nny,nfpix)
+		real(4) psfs(npsize,npsize,npnmax,4)
+		real(4) psfuncs(npsize,npsize,npnmax,4)
+		real(4) pxcent(4),pycent(4),ppix(4),fwhm(4)
+		real(4) Xpos(nmax,nf,4), Ypos(nmax,nf,4), Rstann(4), Rstwid(4)
+		real(4) LBACK(nmax,nf,4), LSIG(nmax,nf,4), Lconf(nmax,nf,4)
+		real(4) MAGSTD(nmax,4), eMAGSTD(nmax,4), Rsat(nall,4), zero(4)
+c	    real(4) Table(nmax,32)
 c       real(4) Table(nmax,59)  ! JWF B30221
         real(4) Table(nmax,65)  ! JWF B31209
-	real(4) framefluxes(nmax,nf,4),frameuncs(nmax,nf,4),framechis(nmax,nf,4)
-	integer FLGSTD(nmax,4), adb_nmax, IDlist(nmax)
-	integer Mask(nnx,nny,nfpix)
-        integer fatal, trouble, ntroublebits, troublebits(6), saturation, fbits(32)
-	integer satbits(9),satpix(9),ignorebits(5),ignorepix, IDpri
-        integer*4 pix_order(nf,4)
-   	integer(2) wflag(nf,4), MapPSFs(nxfp,nyfp,4)
-	integer(2) xTRANS(nf,4),yTRANS(nf,4), SatNum(nall,4)
-	character(150000) HDR(nf,4), Hfits
+		real(4) framefluxes(nmax,nf,4),frameuncs(nmax,nf,4),framechis(nmax,nf,4)
+		integer FLGSTD(nmax,4), adb_nmax, IDlist(nmax)
+		integer Mask(nnx,nny,nfpix)
+            integer fatal, trouble, ntroublebits, troublebits(6), saturation, fbits(32)
+		integer satbits(9),satpix(9),ignorebits(5),ignorepix, IDpri
+            integer*4 pix_order(nf,4)
+   	   	integer(2) wflag(nf,4), MapPSFs(nxfp,nyfp,4)
+		integer(2) xTRANS(nf,4),yTRANS(nf,4), SatNum(nall,4)
+		character(150000) HDR(nf,4), Hfits
 
 ! Declare the internal arrays.
-   	real(8), allocatable :: RAlistnew(:), DEClistnew(:)
-	real(8), allocatable :: x8set(:,:,:),y8set(:,:,:)
-c	real(4), allocatable :: p(:), grad(:), pmost(:)   ! JWF B30207
-	real(4), allocatable :: p(:), pmost(:)            ! JWF B30207
-	real(4), allocatable :: p_PM(:), p_preADB(:)      ! JWF B30207
-	real(4), allocatable :: Xposnew(:,:,:),Yposnew(:,:,:)
-	real(4), allocatable :: LBACKnew(:,:,:),LSIGnew(:,:,:)
-	real(4), allocatable :: Rsatnew(:,:)
-c	integer(4), allocatable :: npassprev(:),offset(:,:,:)              ! JWF B31206
-	integer(4), allocatable :: npassprev(:),offset(:,:,:),IDlistnew(:) ! JWF B31206
-	logical(1), allocatable :: onframe(:,:,:)
-	real(8) ra8, dec8, x8, y8, x8pri, y8pri, ra8off, dec8off
-	real(8) RApri,Decpri,JD0
-	real(8) racan(maxblend),deccan(maxblend),racannew,deccannew
-	real(4) pxc(maxbands),pyc(maxbands)
-	real(4) xpixscale(maxframes),ypixscale(maxframes),tframe(maxframes)
-	real(4) fitradii0(maxbands), fitradii(maxbands), fitradii_std(maxbands)
-	real(4) pscale(maxbands),psamp(maxbands),sigfac(maxbands)
-c       maxpix is set to 200000
-	real(4) dvalue(maxpix,maxbands),varpsf(maxpix,maxbands),sigset(maxpix)
-	real(4) sigdvalue(maxpix,maxbands),sigdvalue0(maxpix,maxbands)
-	real(4) flux(maxbands,maxblend),sigflux(maxbands,maxblend)
+    	real(8), allocatable :: RAlistnew(:), DEClistnew(:)
+    	real(8), allocatable :: x8set(:,:,:),y8set(:,:,:)
+c	    real(4), allocatable :: p(:), grad(:), pmost(:)   ! JWF B30207
+    	real(4), allocatable :: p(:), pmost(:)            ! JWF B30207
+		real(4), allocatable :: p_PM(:), p_preADB(:)      ! JWF B30207
+		real(4), allocatable :: Xposnew(:,:,:),Yposnew(:,:,:)
+		real(4), allocatable :: LBACKnew(:,:,:),LSIGnew(:,:,:)
+		real(4), allocatable :: Rsatnew(:,:)
+c	    integer(4), allocatable :: npassprev(:),offset(:,:,:)              ! JWF B31206
+		integer(4), allocatable :: npassprev(:),offset(:,:,:),IDlistnew(:) ! JWF B31206
+		logical(1), allocatable :: onframe(:,:,:)
+		real(8) ra8, dec8, x8, y8, x8pri, y8pri, ra8off, dec8off
+		real(8) RApri,Decpri,JD0
+		real(8) racan(maxblend),deccan(maxblend),racannew,deccannew
+		real(4) pxc(maxbands),pyc(maxbands)
+		real(4) xpixscale(maxframes),ypixscale(maxframes),tframe(maxframes)
+		real(4) fitradii0(maxbands), fitradii(maxbands), fitradii_std(maxbands)
+		real(4) pscale(maxbands),psamp(maxbands),sigfac(maxbands)
+c       maxpix is set in wpro.inc
+		real(4) dvalue(maxpix,maxbands),varpsf(maxpix,maxbands),sigset(maxpix)
+		real(4) sigdvalue(maxpix,maxbands),sigdvalue0(maxpix,maxbands)
+		real(4) flux(maxbands,maxblend),sigflux(maxbands,maxblend)
         real*8  flux_preADB(maxbands,maxblend)  !  JWF B30226
-	real(4) flux_nonPM(maxbands,maxblend),sigflux_nonPM(maxbands,maxblend)! JWF B30208
-	real(4) finalflux(maxbands,maxblend),flux0(maxbands,maxblend)
-	real(4) frameflux(maxframes,maxbands,maxblend)
-	real(4) framesig(maxframes,maxbands,maxblend)
-	real(4) framechi(maxframes,maxbands)
-	real(4) rchisqb(maxbands),ss(maxblend),backbuf(100000)
-	real(4) sigx(maxblend),sigy(maxblend),sigxy(maxblend)
-	real(4) apflux(maxbands,maxblend), sigapflux(maxbands)
-	real(4) wtapflux(maxbands),p_final(maxblend2)
-	real(4) flux_init(maxbands,maxblend),rchisqb_init(maxbands)
-	real(4) fsat(maxbands),ftroubles(maxbands),freject(maxbands)
-	real(4) troublerpix, troublersq
-	integer WCS(maxframesin,maxbands), offscl
-	integer ifq(maxframes),ibq(maxframes),kpn(maxframes)
-	integer ivalue(maxpix,maxbands), jvalue(maxpix,maxbands)
-	integer ifvalue(maxpix,maxbands),primask(maxpix,maxbands)
-	integer neighbors(maxblend),npsf(maxbands),nnpsf(maxbands)
-	integer icomp(maxblend),iband(maxbands),nvp(maxbands)
-   	integer nxorig(*), nyorig(*), nx(*),ny(*),nnx,nny, nmax, nout, pcount(maxbands)
-	integer nvalues(maxbands),npvalues(maxbands),npall(maxbands)
-	integer isatsampmin(maxbands),satsamples(maxbands)
-	integer(2) nlayers(maxbands)
-	logical(4) debug,newlayer(maxbands),posconstrain, SPIT, MIPS
-	logical(4) fullset,ok,goodcomp(maxblend),goodcomp_init(maxblend)
+		real(4) flux_nonPM(maxbands,maxblend),sigflux_nonPM(maxbands,maxblend)! JWF B30208
+		real(4) finalflux(maxbands,maxblend),flux0(maxbands,maxblend)
+		real(4) frameflux(maxframes,maxbands,maxblend)
+		real(4) framesig(maxframes,maxbands,maxblend)
+		real(4) framechi(maxframes,maxbands)
+		real(4) rchisqb(maxbands),ss(maxblend),backbuf(100000)
+		real(4) sigx(maxblend),sigy(maxblend),sigxy(maxblend)
+		real(4) apflux(maxbands,maxblend), sigapflux(maxbands)
+		real(4) wtapflux(maxbands),p_final(maxblend2)
+		real(4) flux_init(maxbands,maxblend),rchisqb_init(maxbands)
+		real(4) fsat(maxbands),ftroubles(maxbands),freject(maxbands)
+		real(4) troublerpix, troublersq
+		integer WCS(maxframesin,maxbands), offscl
+		integer ifq(maxframes),ibq(maxframes),kpn(maxframes)
+		integer ivalue(maxpix,maxbands), jvalue(maxpix,maxbands)
+		integer ifvalue(maxpix,maxbands),primask(maxpix,maxbands)
+		integer neighbors(maxblend),npsf(maxbands),nnpsf(maxbands)
+		integer icomp(maxblend),iband(maxbands),nvp(maxbands)
+   	   	integer nxorig(*), nyorig(*), nx(*),ny(*),nnx,nny, nmax, nout, pcount(maxbands)
+		integer nvalues(maxbands),npvalues(maxbands),npall(maxbands)
+		integer isatsampmin(maxbands),satsamples(maxbands)
+		integer(2) nlayers(maxbands)
+		logical(4) debug,newlayer(maxbands),posconstrain, SPIT, MIPS
+		logical(4) fullset,ok,goodcomp(maxblend),goodcomp_init(maxblend)
         logical*4 goodcomp_preADB(maxblend)
-	logical(4) it_is_saturated, newpix
+		logical(4) it_is_saturated, newpix
+        logical*4 DoPMsub
+        real*4    FluxSub, FluxRat
+        real*8    raPMsub, decPMsub, raPMsub0, decPMsub0
 
-	common /funccom/ racan,deccan,nvalues,ivalue,jvalue,dvalue,
+		common /funccom/ racan,deccan,nvalues,ivalue,jvalue,dvalue,
      *	    sigdvalue,ifvalue,WCS,ifq,ibq,primask,nframes,
      *	    kpn,nnpsf,pxc,pyc,psamp,nblend,goodcomp,icp,
      *	    xpixscale,ypixscale,flux,rchisq,rchisqb,tframe
-	common /poscom/ posconstrain
+		common /poscom/ posconstrain
 c
         logical*4 ok2, DoThisOne(maxblend), NotRunaway           !  JWF B30208
         real*8 sumJD, sumWgtJD, WgtJD, Dtmp1, Dtmp2              !  JWF B30207
         real*8 sumLconf(4), sumvarpsf(4)                         !  JWF B30419
         real*4 covRpmR, covDpmD, covpmRD, dist, cd, pmra, pmdec  !  JWF B21221
+        real*4 pmraFsub, pmdecFsub                               !  JWF B91109
         real*4 blendist, blendist2(4), medsig(4), Skew, hival    !  JWF B30419/B306046
         integer*4 iter, nsteps, nsteps2, iter2,                  !  JWF B30129
      +            m, m0, mf, kk, jj, nFusable, nblend_preADB,    !  JWF B30208
@@ -208,54 +212,52 @@ c
         data kTarget/0/, nWarnPMNaN/0/, NdistWarn/0/    ! JWF B30505
         real*4    dammmmean, dammmmed, dammmmode, dammmsigma, BGsig
 c
-	integer nmmmwarn, maxmmmwarn
-	data nmmmwarn/0/, maxmmmwarn/50/
+	    integer nmmmwarn, maxmmmwarn
+	    data nmmmwarn/0/, maxmmmwarn/50/
 c
         character*200 FSimgNam, FSimgNam0                           ! JWF B30824
+        character*80  hdrline                                       ! JWF B91109
         character*20  NumStr                                        ! JWF B30824
         character*2   TrgStr                                        ! JWF B30824
         character*1   BndStr                                        ! JWF B30824
         integer*4 naxis, naxes(2), status, blocksize, outunit,      ! JWF B30824
      +            group, fpixel, nelements, kpix, bitpix, npix      ! JWF B30824
         logical*4 simple, extend, zexist                            ! JWF B30824
-   	real*4,   allocatable :: pstamp1(:), pstamp2(:)             ! JWF B30824
-       logical IzBad
-c
-c
-c
+     	real*4,   allocatable :: pstamp1(:), pstamp2(:)             ! JWF B30824
+        logical IzBad
 c
 c
         if (GotAllTargets .and. QuitEarly) return
 c
 c	JD0 = 55197.d0	! Modified Julian Date at 2010 Jan 1 0h UT
 c       JD0 = 55400.d0	! Modified Julian Date at 2010 Jul 23 0h UT, JWF B21105
- 	debug = .false.
+     	debug = .false.
 c	debug = .true.
 
-	print *, '$Id: wpro_v6.f 13438 2014-02-27 18:10:00Z tim $'
-c	print *,'WPRO Version 6;  2012-Mar-22'
-	print *,'wpro_v6 for WSDS v7;  2013-Dec-05'      !  JWF B31205
-        print *,'maxsteps =        ',maxsteps            !  JWF B30219
-        print *,'MeanObsEpochType =',MeanObsEpochType    !  JWF B30219
+	  print *, '$Id: wpro_v6.f 13438 2014-02-27 18:10:00Z tim $'
+c	  print *,'WPRO Version 6;  2012-Mar-22'
+	  print *,'wpro_v6 for WSDS v7;  2013-Dec-05'      !  JWF B31205
+      print *,'maxsteps =        ',maxsteps            !  JWF B30219
+      print *,'MeanObsEpochType =',MeanObsEpochType    !  JWF B30219
 
-	istat = 0
+	  istat = 0
 
 ! Set templates for interpreting pixel masks.
 
 ! count glitch pixels or persistent latent pixels detected in dynasky
-	ntroublebits = 2
-	troublebits(1) = 21
-	troublebits(2) = 28
-	trouble = 0
-	do i=1,ntroublebits
-	  trouble = trouble + 2**troublebits(i)
-	end do
-	troublerpix = 1.25 ! trouble bit search radius, frame pixels
+		ntroublebits = 2
+		troublebits(1) = 21
+		troublebits(2) = 28
+		trouble = 0
+		do i=1,ntroublebits
+		  trouble = trouble + 2**troublebits(i)
+		end do
+		troublerpix = 1.25 ! trouble bit search radius, frame pixels
 
-	saturation = 0                  ! bits 10-18 => saturation
-	do i = 10,18
-	    saturation = saturation + 2**i
-	enddo
+		saturation = 0                  ! bits 10-18 => saturation
+		do i = 10,18
+		    saturation = saturation + 2**i
+		enddo
 	    
 
         fatal = 0
@@ -270,31 +272,31 @@ c	print *,'WPRO Version 6;  2012-Mar-22'
         enddo
  74     I = 0
 
-	satpix = 2**satbits
-	ignorepix = sum(2**ignorebits)
+    	satpix = 2**satbits
+	    ignorepix = sum(2**ignorebits)
 
 ! Set the fitting radii.
-	if (minval(fwhm) > 0.) then
+	  if (minval(fwhm) > 0.) then
 	    fitradii0 = 1.25*fwhm		! arcsec
-	else
+	  else
 	    print *,'WPRO: FWHM values not set'
 	    istat = 1
 	    return
-	endif
+	  endif
 
 ! Set passive deblending parameters.
-	blendist = 2.*maxval(fwhm)	! critical separation for passive
+	  blendist = 2.*maxval(fwhm)	! critical separation for passive
      +               *RblendFac         ! deblending [arcsec]
         blendist2(1) = 2.0*RBlendFac*fwhm(1)
         blendist2(2) = 2.0*RBlendFac*fwhm(2)
         blendist2(3) = 2.0*RBlendFac*fwhm(3)
         blendist2(4) = 2.0*RBlendFac*fwhm(4)
 
-	pratio	= 0.1			! critical flux ratio for passive
+	  pratio	= 0.1			! critical flux ratio for passive
 					! deblending
-c	nbmax = 3			! maximum number of passively deblended
+c	  nbmax = 3			! maximum number of passively deblended
 					! components (now in jwfcom)
-	pdb_dchi = 0.5			! minimum acceptable reduction in the
+	  pdb_dchi = 0.5			! minimum acceptable reduction in the
 					! reduced chi squared resulting from
 					! adding a new passively-deblended
 					! source component
@@ -305,31 +307,33 @@ c	nbmax = 3			! maximum number of passively deblended
 !					  active deblending. It is set in the
 !					  calling program (WPHot).  A zero
 !					  value turns off active deblending.
-	adb_chiThresh = 1.5		! threshold value of the reduced chi
+  	  adb_chiThresh = 1.5		! threshold value of the reduced chi
 					! squared for active deblending to be
 					! attempted
-	adb_dchi = 0.25	        	! minimum acceptable reduction in the
+	  adb_dchi = 0.25	        	! minimum acceptable reduction in the
 					! reduced chi squared due to active 
 					! deblending
-	adb_chimax = 3.			! maximum acceptable value of reduced
+	  adb_chimax = 3.			! maximum acceptable value of reduced
 					! chi squared after deblending
-	adb_pksep = 1.6*minval(fwhm)	! minimum separation for which detector
+	  adb_pksep = 1.6*minval(fwhm)	! minimum separation for which detector
 					! can distinguish sources [arcsec]
-	adb_pksep = 2.2*minval(fwhm)	! minimum separation for which detector
+	  adb_pksep = 2.2*minval(fwhm)	! minimum separation for which detector
 					! can distinguish sources [arcsec]
-	adb_minsep = 0.65*minval(fwhm)	! lower limit for separation of
+	  adb_minsep = 0.65*minval(fwhm)	! lower limit for separation of
 					! deblended sources [arcsec]
 
         nsentinel = 0                   ! Count out of range pixels
 
-	if (nf > maxframesin) then
+	  if (nf > maxframesin) then
 	    print *,'WPRO: Need to increase maxframesin'
+        print *,'      Need at least', nf
+        print *,'      maxframesin =', maxframesin
 	    istat = 1
 	    return
-	endif
+	  endif
 
 ! Normalize the PSFs.
-	do ib = 1,maxbands
+	  do ib = 1,maxbands
 	  if (any(wflag(1:nf,ib)==1)) then
 	    do k = 1,npnmax
 		psfsum = sum(psfs(1:npsf(ib),1:npsf(ib),k,ib))
@@ -341,13 +345,13 @@ c	nbmax = 3			! maximum number of passively deblended
 		enddo
 	    enddo
 	  endif
-	enddo
+	  enddo
 
 ! Set up various quantities to be passed in common to FUNC.
-	nnpsf = npsf
-	pxc = pxcent
-	pyc = pycent
-	psamp = ppix
+	  nnpsf = npsf
+	  pxc = pxcent
+	  pyc = pycent
+	  psamp = ppix
 
 c	allocate (RAlistnew(nmax))                 ! JWF B30312
 c	allocate (DEClistnew(nmax))                ! JWF B30312
@@ -364,7 +368,7 @@ c
 
 c	print *,'=========== allocating with nmax,nall,nf,maxblend,maxbands = ',nmax,nall,nf,maxblend,maxbands !!! TPC
 
-	allocate (RAlistnew(nmax),    DEClistnew(nmax),    Xposnew(nmax,nf,4),
+	  allocate (RAlistnew(nmax),    DEClistnew(nmax),    Xposnew(nmax,nf,4),
      +            Yposnew(nmax,nf,4), LBACKnew(nmax,nf,4), LSIGnew(nmax,nf,4),
      +	          Rsatnew(nall,4),    npassprev(nmax),     x8set(maxblend,nf,maxbands),
      +            y8set(maxblend,nf,maxbands), offset(maxblend,nf,maxbands),
@@ -375,37 +379,37 @@ c	print *,'=========== allocating with nmax,nall,nf,maxblend,maxbands = ',nmax,n
           return
         end if
 c
-	npassprev = 0
- 	RAlistnew  = 0.0d0               ! JWF B30312
- 	DEClistnew = 0.0d0               ! JWF B30312
- 	Xposnew    = 0.0                 ! JWF B30312
- 	Yposnew    = 0.0                 ! JWF B30312
- 	LBACKnew   = 0.0                 ! JWF B30312
- 	LSIGnew    = 0.0                 ! JWF B30312
- 	Rsatnew    = 0.0                 ! JWF B30312
- 	x8set      = 0.0d0               ! JWF B30312
- 	y8set      = 0.0d0               ! JWF B30312
- 	offset     = 0                   ! JWF B30312
+     	npassprev = 0
+    	RAlistnew  = 0.0d0               ! JWF B30312
+    	DEClistnew = 0.0d0               ! JWF B30312
+    	Xposnew    = 0.0                 ! JWF B30312
+    	Yposnew    = 0.0                 ! JWF B30312
+    	LBACKnew   = 0.0                 ! JWF B30312
+    	LSIGnew    = 0.0                 ! JWF B30312
+    	Rsatnew    = 0.0                 ! JWF B30312
+    	x8set      = 0.0d0               ! JWF B30312
+    	y8set      = 0.0d0               ! JWF B30312
+    	offset     = 0                   ! JWF B30312
 
 ! Initialize coordinate transformation routine.
-	do ifs = 1,nf
-	do ib = 1,maxbands
-	  WCS(ifs,ib) =  -1
-	  if (wflag(ifs,ib) == 1) then
+	  do ifs = 1,nf
+	  do ib = 1,maxbands
+	   WCS(ifs,ib) =  -1
+	   if (wflag(ifs,ib) == 1) then
 
-	    Hfits = HDR(ifs,ib)
-	    call wcsinit(Hfits,iwcs)
-	    if ( iwcs < 0) then
-		print *,'*** WCSinit ERROR',iwcs
-c		call exit(1)    ! JWF B80601 
-		call exit(64)   !
+	     Hfits = HDR(ifs,ib)
+	     call wcsinit(Hfits,iwcs)
+	     if ( iwcs < 0) then
+		 print *,'*** WCSinit ERROR',iwcs
+c		 call exit(1)    ! JWF B80601 
+		 call exit(64)   !
+	     endif
+	     WCS(ifs,ib) = iwcs
+
 	    endif
-	    WCS(ifs,ib) = iwcs
 
-	   endif
-
-	enddo
-	enddo
+	  enddo
+	  enddo
 
 ! Find out which candidates are on which frames.
 c	print *,'    allocating with nmax,nf,maxbands = ',nmax,nf,maxbands !!! TPC
@@ -487,6 +491,7 @@ c	    sigfac = sqrt((fitradii**2 - Rsat(n,1:4)**2))/fitradii0     ! JWF B30930
 		iframe = iframe + 1
 		if (iframe > maxframes) then
 		    print *,'WPRO: Need to increase maxframes'
+            print *,'      Need at least', nf
 		    istat = 1
 		    return
 		endif
@@ -731,7 +736,9 @@ c		tframe(iframe) = JD(ifs,ib) - JD0   ! don't have JD0 yet
 			endif
 			nvalues(ib) = nvalues(ib) + 1
 			if (nvalues(ib)==maxpix)
-     *			    print *,'WARNING!!!  WPRO: Need to increase maxpix'
+     *      print *,'WARNING!!!  WPRO: Need to increase maxpix from',
+     +      maxpix,' to at least', nvalues(ib)
+c     SHOULDN'T THERE BE AN ERROR EXIT HERE???     
 			ivalue(nvalues(ib),ib) = i
 			jvalue(nvalues(ib),ib) = j
 			dvalue(nvalues(ib),ib) = Array(itrans,jtrans,ifs_pix) - back
@@ -836,6 +843,7 @@ c            print *,'icomp:',(icomp(nn),nn = 1, nblend) ! JWF dbg  [not set yet
              print *,'p:',p(1:2*nblend) ! JWF dbg
              print *,'racan:', racan(1:nblend) ! JWF dbg
              print *,'deccan:',deccan(1:nblend) ! JWF dbg
+             print *,'rchisq, nDoF:', rchisq, nDoF
             end if
 
 ! Check for runaway fit.   [JWF: this is where the RA:Dec solutions are checked]
@@ -2197,6 +2205,7 @@ c
               print *,'racan:', racan(1:nblend) ! JWF dbg
               print *,'deccan:',deccan(1:nblend) ! JWF dbg
               print *,'nactive, nactiveg:', nactive, nactiveg
+              print *,'framesig:', framesig
              end if ! JWF dbg
 c
              call unspew_pm(p,psfs,npsize,npnmax,varpsf,nlayers,n,onframe,
@@ -2216,6 +2225,8 @@ c            print *,'back from unspew_pm'  !  JWF dbg
               print *,'racan:', racan(1:nblend) ! JWF dbg
               print *,'deccan:',deccan(1:nblend) ! JWF dbg
               print *,'nactive, nactiveg:', nactive, nactiveg
+              print *,'nDoF_pm:', nDoF_pm
+              print *,'framesig:', framesig
              end if ! JWF dbg
 c
 ! Add the PM results to output table and update frame-dependent information.
@@ -2226,12 +2237,12 @@ c
 	      if (goodcomp(nn) .or. (nn .gt. nblend)) then
                nc = nc + 1
 	       if (((nn==icomp(1)) .or. (DoThisOne(nn)) .or. (nn .gt. nblend))
-     +            .and. (any(flux_nonPM(iband(1:nbands),nn) /= 0.))) then
+     +            .and. (any(flux(iband(1:nbands),nn) /= 0.))) then
                 if (SingleFrame) go to 1000       ! JWF B31206
 		m = m+1
                 if (GotTarget) then
                   print *,'loading PM data into Table slot',m
-                  print *,'nn, nc:',nn,nc
+                  print *,'nn, nc, mblend:',nn,nc, mblend
                   if (nn .gt. nblend) then
                     print *,'RA, Dec:',RAlistnew(m),DEClistnew(m)
                     print *,'This is an active deblend, jumping to frame subtraction'
@@ -2280,7 +2291,9 @@ c========================= end of code added by JWF on B21120 ==================
 c
                   if (GotTarget) print *,'(1149) took primary-component branch' ! JWF dbg
                   Table(m,29) = 3600.*p(2*mblend+1)	! RA PM  JWF B21121
-		  Table(m,30) = 3600.*p(2*mblend+2)	! Dec PM  JWF B21121
+		          Table(m,30) = 3600.*p(2*mblend+2)	! Dec PM  JWF B21121
+                  pmraFsub  = abs(Table(m,29))      ! JWF B91109  [asec/yr]
+                  pmdecFsub = abs(Table(m,30))      ! JWF B91109  [asec/yr]
 c
                   cd  = cos(deccan(nn)*dtor)
                   dRA = abs(racan(nn)+p(nc)/cd-RAlistnew(m))
@@ -2302,10 +2315,10 @@ c
                   end if
 c
                   nPMsolns    = nPMsolns + 1
-		  Table(m,31) = sigpmr			! RA PM unc
-		  Table(m,32) = sigpmd			! Dec PM unc
-                  pmra  = p(2*mblend+1)/365.25d0     ! JWF B21127  [deg/day]
-                  pmdec = p(2*mblend+2)/365.25d0     ! JWF B21127  [deg/day]
+		          Table(m,31) = sigpmr			! RA PM unc
+		          Table(m,32) = sigpmd			! Dec PM unc
+                  pmra  = p(2*mblend+1)/365.25       ! JWF B21127  [deg/day]
+                  pmdec = p(2*mblend+2)/365.25       ! JWF B21127  [deg/day]
 c                 Table(m,35) = sqrt(sigx(nn)**2 + ((MJD0-JD0)*sigpmr/365.25)**2
 c    +                                           + 2.0*(MJD0-JD0)*covRpmR)
 c                 Table(m,36) = sqrt(sigy(nn)**2 + ((MJD0-JD0)*sigpmd/365.25)**2
@@ -2324,6 +2337,7 @@ c
 c
                 end if ! (nn .ne. icomp(1))
                 if (GotTarget) then                        ! JWF dbg
+                  print *,'wpro_v6 (2340): m, nn, nc, mblend:', m, nn, nc, mblend
                   print *,'RA and Dec for non-PM:', RAlistnew(m), DEClistnew(m) ! JWF dbg
                   print *,'RA and Dec for obs-epoch:', racan(nn)+p(nc)/cd,
      +                                                 deccan(nn)+p(mblend+nc) ! JWF dbg
@@ -2340,6 +2354,9 @@ c                                                  NOTE: covpmRD negligible
      +                     sigx(nn),sigy(nn),sigxy(nn)         ! JWF dbg
                 end if                                         ! JWF dbg
 c   NOTE: position here is at MeanObsEpoch; transform to RefEpoch is in writeTABLE
+                raPMsub0    = racan(nn) + p(nc)/cd
+                decPMsub0   = deccan(nn) + p(mblend+nc)
+                if (GotTarget) print *,'raPMsub0, decPMsub0:', raPMsub0, decPMsub0
                 Table(m,38) = int(100.0*(racan(nn) + p(nc)/cd))
                 Table(m,39) =     100.0*(racan(nn) + p(nc)/cd)
      +                      - int(100.0*(racan(nn) + p(nc)/cd))
@@ -2372,25 +2389,47 @@ c====== resume with flux subtraction from frames ===============================
         	    offscl = -1
 c        	    call wcs2pix(iwcs, RAlistnew(m), DEClistnew(m),  ! JWF B21127
 c    *			x8, y8, offscl)                              ! JWF B21127
-c========================= code added by JWF on B21127 ============================
-                    if (PMsubtract .and. (nn==icomp(1))) then        ! JWF B30126
+c========================= code added by JWF on B91109 ============================
+                DoPMsub = .false.
+                if (Table(m,54) .gt.0.0)
+     +          DoPMsub = PMsubtract .and.
+     +                  ((pmraFsub  .ge. PMminSub)  .or.
+     +                   (pmdecFsub .ge. PMminSub)) .and.
+     +                   (Table(m,18)/Table(m,54) .ge. PMrchi2Ratio)
+c========================= code added by JWF on B21127 & B91109 ===================
+                    if (DoPMsub .and. (nn==icomp(1))) then        ! JWF B30126
                       tframe(iframe) = JD(ifs,ib) - JD0
-                      dRA  = pmra*tframe(iframe)/dcos(dtor*DEClistnew(m))
-                      dDec = pmdec*tframe(iframe)
-                    else                                             ! JWF B30126
-                      dRA  = 0.0                                     ! JWF B30126
-                      dDec = 0.0                                     ! JWF B30126
-                    end if                                           ! JWF B30126
-                    call wcs2pix(iwcs,
-     +                           RAlistnew(m)+dRA,
-     +                           DEClistnew(m)+dDec,
+                      dRA  = pmra*tframe(iframe)/dcos(dtor*DEClistnew(m)) ! JWF B91109
+                      dDec = pmdec*tframe(iframe)                         ! JWF B91109
+                      raPMsub  = raPMsub0  + dRA                          ! JWF B91109
+                      decPMsub = decPMsub0 + dDec                         ! JWF B91109
+                      if (GotTarget) print *,'ifs, raPMsub, decPMsub:', ifs, raPMsub, decPMsub
+                      if (Table(m,45+ib) .gt. 0.0) then                   ! JWF B91109
+                        FluxRat = Table(m,41+ib)/Table(m,45+ib)           ! JWF B91109
+                      else                                                ! JWF B91109
+                        FluxRat = flux_nonPM(ib,nn)/sigflux_nonPM(ib,nn)  ! JWF B91109
+                      end if                                              ! JWF B91109
+                      if (GotTarget) print *,'FluxRat:', FluxRat
+                      if (ifs .eq. 1) nPMsub  = nPMsub + 1                ! JWF B91109
+                      if ((nPMsub .le. 100) .and. (ifs .eq. 1))           ! JWF B91109
+     +                print *,'PM flux subtraction for source#',n,        ! JWF B91109
+     +                ', band',ib,
+     +                '; motion =', sqrt(pmraFsub**2 + pmdecFsub**2)      ! JWF B91109
+                    else                                                  ! JWF B30126
+                      raPMsub  = RAlistnew(m)                             ! JWF B91109
+                      decPMsub = DEClistnew(m)                            ! JWF B91109
+                      if (GotTarget) print *,'ifs, raPMsub, decPMsub:', ifs, raPMsub, decPMsub
+                      FluxRat = flux_nonPM(ib,nn)/sigflux_nonPM(ib,nn)    ! JWF B91109
+                      if (GotTarget) print *,'FluxRat:', FluxRat
+                    end if                                                ! JWF B30126
+                    call wcs2pix(iwcs, raPMsub, decPMsub,                 ! JWF B91109
      +                           x8, y8, offscl)
 c     if (n .eq. 100) print *,'(1199): dRA,dDec = ',dRA, dDec,
 c    + ' on frame',ifs  ! JWF dbg
-c========================= end of code added by JWF on B21127 =====================
+c========================= end of code added by JWF on B21127 & B91109 ===========
         	    if (offscl >= 0) then
-			Xposnew(m,ifs,ib) = x8
-			Yposnew(m,ifs,ib) = y8
+		          Xposnew(m,ifs,ib) = x8
+			      Yposnew(m,ifs,ib) = y8
 	    	    endif
                     if (GotTarget) then
                       print *,'frame subtract: m,ifs,ib =',m,ifs,ib
@@ -2403,33 +2442,39 @@ c========================= end of code added by JWF on B21127 ==================
 !
 ! Subtract estimated contribution of source from observed image and update
 ! uncertainty map.
-		    if(flux_nonPM(ib,nn)/sigflux_nonPM(ib,nn) > 2. .and. nvp(ib) /= 0) then
-                      if (GotTarget) then
-                        print *,'subtracting flux',flux_nonPM(ib,nn),'in band',ib,
-     +                          'for source nn =',nn,'in frame ifs =',ifs
-                        if (WrtFSimg) then                                   ! JWF B30824
-                          write(BndStr,'(I1)') ib                            ! JWF B30824
-                          write(TrgStr,'(I2.2)') kTarget                     ! JWF B30824
-                          write(NumStr,*) ifs                                ! JWF B30824
-                          call trimblnk(NumStr)                              ! JWF B30824
-                          FSimgNam0 = 'FSimage_'//TrgStr//'_W'//BndStr//'_fr'! JWF B30824
-     +                                         //NumStr(1:lnblnk(NumStr))    ! JWF B30824
-                          blocksize=1                                        ! JWF B30824
-                          simple=.true.                                      ! JWF B30824
-                          bitpix=-32                                         ! JWF B30824
-                          naxis=2                                            ! JWF B30824
-                          extend=.false.                                     ! JWF B30824
-                          group=1                                            ! JWF B30824
-                          fpixel=1                                           ! JWF B30824
-                          kpix = 0                                           ! JWF B30824
-                          npix = 0                                           ! JWF B30824
-                        end if                                               ! JWF B30824
-                      end if
+		    if(FluxRat > 2. .and. nvp(ib) /= 0) then
+              if (doPMsub) then                              ! JWF B91109
+                FluxSub = flux(ib,nn)                        ! JWF B91109             
+              else                                           ! JWF B91109
+                FluxSub = flux_nonPM(ib,nn)                  ! JWF B91109
+              end if                                         ! JWF B91109
+c
+              if (GotTarget) then
+                print *,'subtracting flux',FluxSub,'in band',ib,
+     +                  'for source nn =',nn,'in frame ifs =',ifs
+                if (WrtFSimg) then                                   ! JWF B30824
+                  write(BndStr,'(I1)') ib                            ! JWF B30824
+                  write(TrgStr,'(I2.2)') kTarget                     ! JWF B30824
+                  write(NumStr,*) ifs                                ! JWF B30824
+                  call trimblnk(NumStr)                              ! JWF B30824
+                  FSimgNam0 = 'FSimage_'//TrgStr//'_W'//BndStr//'_fr'! JWF B30824
+     +                                 //NumStr(1:lnblnk(NumStr))    ! JWF B30824
+                  blocksize=1                                        ! JWF B30824
+                  simple=.true.                                      ! JWF B30824
+                  bitpix=-32                                         ! JWF B30824
+                  naxis=2                                            ! JWF B30824
+                  extend=.false.                                     ! JWF B30824
+                  group=1                                            ! JWF B30824
+                  fpixel=1                                           ! JWF B30824
+                  kpix = 0                                           ! JWF B30824
+                  npix = 0                                           ! JWF B30824
+                end if                                               ! JWF B30824
+              end if
 		      ifp = min(max(nint(x8), 1), nxfp)
 		      jfp = min(max(nint(y8), 1), nyfp)
 		      k = MapPSFs(ifp,jfp,ib)
-	    	      xprat = xpixscale(iframe)/psamp(ib)
-	    	      yprat = ypixscale(iframe)/psamp(ib)
+	    	  xprat = xpixscale(iframe)/psamp(ib)
+	    	  yprat = ypixscale(iframe)/psamp(ib)
 		      ipsfspan = nint(npsf(ib)/xprat)
 		      jpsfspan = nint(npsf(ib)/yprat)
 		      ipos = nint(x8)
@@ -2438,42 +2483,43 @@ c========================= end of code added by JWF on B21127 ==================
 		      ihi = min(ipos+ipsfspan/2, nxorig(ib))
 		      jlo = max(jpos-jpsfspan/2, 1)
 		      jhi = min(jpos+jpsfspan/2, nyorig(ib))
-                      if (GotTarget .and. WrtFSimg) then                     ! JWF B30824
-                        naxes(1) = ihi - ilo + 1                             ! JWF B30824
-                        naxes(2) = jhi - jlo + 1                             ! JWF B30824
-                        print *,'jlo,jhi,ilo,ihi:',jlo,jhi,ilo,ihi           ! JWF B30829
-                        print *,'ipsfspan, jpsfspan:',ipsfspan,jpsfspan      ! JWF B30829
-                        print *,'npsf(ib),xprat,yprat:',npsf(ib),xprat,yprat ! JWF B30829
-                        print *,'FSimg NAXIS1&2 =',naxes                     ! JWF B30824
-                        nelements=naxes(1)*naxes(2)                          ! JWF B30824
-                        allocate(pstamp1(nelements))                         ! JWF B30824
-                        allocate(pstamp2(nelements))                         ! JWF B30824
-                        pstamp1 = 0.0                                        ! JWF B30824
-                        pstamp2 = 0.0                                        ! JWF B30824
-                      end if                                                 ! JWF B30824
+              if (GotTarget .and. WrtFSimg) then                     ! JWF B30824
+                naxes(1) = ihi - ilo + 1                             ! JWF B30824
+                naxes(2) = jhi - jlo + 1                             ! JWF B30824
+                print *,'jlo,jhi,ilo,ihi:',jlo,jhi,ilo,ihi           ! JWF B30829
+                print *,'ipsfspan, jpsfspan:',ipsfspan,jpsfspan      ! JWF B30829
+                print *,'npsf(ib),xprat,yprat:',npsf(ib),xprat,yprat ! JWF B30829
+                print *,'FSimg NAXIS1&2 =',naxes                     ! JWF B30824
+                nelements=naxes(1)*naxes(2)                          ! JWF B30824
+                allocate(pstamp1(nelements))                         ! JWF B30824
+                allocate(pstamp2(nelements))                         ! JWF B30824
+                pstamp1 = 0.0                                        ! JWF B30824
+                pstamp2 = 0.0                                        ! JWF B30824
+              end if                                                 ! JWF B30824
+c
 		      do j = jlo,jhi
 		      do i = ilo,ihi
-                        if (GotTarget .and. WrtFSimg) kpix = kpix + 1        ! JWF B30824
-			itrans = i - xTRANS(ifs,ib)
-			jtrans = j - yTRANS(ifs,ib)
-			if (itrans >= 1 .and. itrans <= nx(ib) .and.
+                if (GotTarget .and. WrtFSimg) kpix = kpix + 1        ! JWF B30824
+		        itrans = i - xTRANS(ifs,ib)
+			    jtrans = j - yTRANS(ifs,ib)
+			    if (itrans >= 1 .and. itrans <= nx(ib) .and.
      *			    jtrans >= 1 .and. jtrans <= ny(ib)) then
 			  xpsample = pxcent(ib) + (i-x8)*xprat
 			  ypsample = pycent(ib) + (j-y8)*yprat
 			  pval =xprat*yprat*bilint(psfs,npsize,npsize,
      *			    npnmax,4,npsf(ib),npsf(ib),
      *			    kpn(iframe),ib,xpsample,ypsample)
-                          if (GotTarget .and. WrtFSimg) then                 ! JWF B30824
-                            pstamp1(kpix) = Array(itrans,jtrans,ifs_pix)     ! JWF B30824
-                            npix = npix + 1                                  ! JWF B30824
-                            if (pstamp1(kpix) .le. -900) pstamp1(kpix) = 0.0 ! JWF B30829
-                          end if                                             ! JWF B30824
-                          Array(itrans,jtrans,ifs_pix) =
-     *			    Array(itrans,jtrans,ifs_pix) - flux_nonPM(ib,nn)*pval
-                          if (GotTarget .and. WrtFSimg) then                 ! JWF B30824
-                            pstamp2(kpix) = Array(itrans,jtrans,ifs_pix)     ! JWF B30824
-                            if (pstamp2(kpix) .le. -900) pstamp2(kpix) = 0.0 ! JWF B30829
-                          end if                                             ! JWF B30829
+              if (GotTarget .and. WrtFSimg) then                 ! JWF B30824
+                pstamp1(kpix) = Array(itrans,jtrans,ifs_pix)     ! JWF B30824
+                npix = npix + 1                                  ! JWF B30824
+                if (pstamp1(kpix) .le. -900) pstamp1(kpix) = 0.0 ! JWF B30829
+              end if                                             ! JWF B30824
+              Array(itrans,jtrans,ifs_pix) =
+     *			Array(itrans,jtrans,ifs_pix) - FluxSub*pval
+              if (GotTarget .and. WrtFSimg) then                 ! JWF B30824
+                pstamp2(kpix) = Array(itrans,jtrans,ifs_pix)     ! JWF B30824
+                if (pstamp2(kpix) .le. -900) pstamp2(kpix) = 0.0 ! JWF B30829
+              end if                                             ! JWF B30829
 			  ipp = nint(xpsample)
 			  jpp = nint(ypsample)
 			  rfitsq = (fitradii(ib)/pscale(ib))**2
@@ -2512,6 +2558,31 @@ c============================== code added by JWF B30824 =======================
                         status=0
                         call ftphpr(outunit,simple,bitpix,naxis,naxes,0,1,extend,status)
                         status=0
+                        write(hdrline,'(a,f12.7)') 'CRVAL1  =', raPMsub
+                        if (GotTarget) print *, hdrline
+                        call ftprec(outunit,hdrline,status)
+                        status=0
+                        write(hdrline,'(a,f12.7)') 'CRVAL2  =', decPMsub
+                        if (GotTarget) print *, hdrline
+                        call ftprec(outunit,hdrline,status)
+                        status=0
+                        write(hdrline,'(a,f12.6)') 'IMGPIX1 =', x8
+                        if (GotTarget) print *, hdrline
+                        call ftprec(outunit,hdrline,status)
+                        status=0
+                        write(hdrline,'(a,f12.6)') 'IMGPIX2 =', y8
+                        if (GotTarget) print *, hdrline
+                        call ftprec(outunit,hdrline,status)
+                        status=0
+                        hdrline = 'COMMENT    This image is before flux subtraction'
+                        if (GotTarget) print *, hdrline
+                        call ftprec(outunit,hdrline,status)
+                        if (doPMsub) then
+                          status=0
+                          hdrline = 'COMMENT    Flux subtraction is along motion path'
+                          call ftprec(outunit,hdrline,status)                        
+                        end if
+                        status=0
                         call ftppre(outunit,group,fpixel,nelements,pstamp1,status)
                         status=0
                         call ftclos(outunit, status)
@@ -2524,6 +2595,26 @@ c
                         call ftinit(outunit,FSimgNam,blocksize,status)
                         status=0
                         call ftphpr(outunit,simple,bitpix,naxis,naxes,0,1,extend,status)
+                        status=0
+                        write(hdrline,'(a,f12.7)') 'CRVAL1  =', raPMsub
+                        call ftprec(outunit,hdrline,status)
+                        status=0
+                        write(hdrline,'(a,f12.7)') 'CRVAL2  =', decPMsub
+                        call ftprec(outunit,hdrline,status)
+                        status=0
+                        write(hdrline,'(a,f12.6)') 'IMGPIX1 =', x8
+                        call ftprec(outunit,hdrline,status)
+                        status=0
+                        write(hdrline,'(a,f12.6)') 'IMGPIX2 =', y8
+                        call ftprec(outunit,hdrline,status)
+                        hdrline = 'COMMENT    This image is after flux subtraction'
+                        status=0
+                        call ftprec(outunit,hdrline,status)
+                        if (doPMsub) then
+                          status=0
+                          hdrline = 'COMMENT    Flux subtraction is along motion path'
+                          call ftprec(outunit,hdrline,status)
+                        end if                          
                         status=0
                         call ftppre(outunit,group,fpixel,nelements,pstamp2,status)
                         status=0

@@ -28,6 +28,14 @@ c vsn 4.6  B80622: pole version; bigger maxframesin in wpro.inc
 c vsn 4.7  B80625: pole version; don't call exit(64) for missing epoch files
 c vsn 4.8  B91103: pole version; increased maxframes &c. again in wpro_pole.inc
 c vsn 4.8  B91104: pole version; increased maxframesin from 240 to 320
+c vsn 4.8  B91106: pole version; added number needed for maxframesin to error
+c                  message; expanded I formats at line 3336
+c vsn 4.8  B91107: pole version; added maxframesin to error message
+c vsn 4.9  B91119: changed MJD0 default to 57170; added namelist varibles
+c                  PMminSub and PMrchi2Ratio; updated wpro_v6 for PMsubtract
+c
+c NOTE: wpro_pole.inc must be named "wpro.inc" in the source code
+c       directory; many routines include it by that name.
 c--------------------------------------------------------------------------------
 
       program WPHot
@@ -228,6 +236,8 @@ c
         data      W1cryoPSFuncscale/1.0/              ! JWF B80316
         data      PrehibSTDScale/4*1.0/               ! JWF B80316
         data      STDbias/4*0.0/                      ! JWF B80402
+        data      PMminSub/0.2/, PMrchi2Ratio/1.5/    ! JWF B91109
+        data      nPMsub/0/                           ! JWF B91109
 c
       namelist/WPHpars/nx,ny,nxAWAIC,nyAWAIC,
      1     zero, cozero, CmosaicCorr, fbits,
@@ -252,11 +262,11 @@ c
      +     PMstepFac, DumPvec, nbmax, BGtype, BGtrimFrac, ! JWF B30524/B30529/B30604
      +     SkThresh, SrcSubSNR, SatMag, SatMJD,           ! JWF/TPC B30605
      +     WarnBigFrameSig, WrtFSimg, SingleFrame,        ! JWF B30711/B30824/B31203
-     +     postcryo                                       ! JWF B31203
+     +     postcryo, PMminSub, PMrchi2Ratio               ! JWF B31203
 
       data max_mep_lines/999999/                        ! CJG B30228
 c
-      data MJD0/56700.d0/, nBadBlend/0/, nPMNaN/0/,     ! JWF B30130 ;  THJ 24Feb2018
+      data MJD0/57170.d0/, nBadBlend/0/, nPMNaN/0/,     ! JWF B30130 ;  THJ 24Feb2018
      +     PMfac/1.0/, minPMsig/0.01/, nAllZero/3*0/,   ! JWF B30130,B80311
      +     TargetRA,TargetDec/20*9.9d9/,                ! JWF B30227
      +     QuitEarly/.false./, WarnZeroFlux/.true./,    ! JWF B30227
@@ -277,7 +287,7 @@ c
       character*8  cdate, ctime       ! JWF B21109
       integer*4    jdate(3),jtime(3)  ! JWF B21109
       integer*4    IArgc,nCWchk       ! JWF B80404
-      data         vsn/'4.8  B91104'/ ! JWF
+      data         vsn/'4.9  B91119'/ ! JWF
       common /vdt/ cdate,ctime,vsn    ! JWF B30507
       logical findpeak                ! JWF B60714
       logical DidCryo                 ! JWF B80307
@@ -3331,7 +3341,7 @@ c	   write (6,*) '**** Badpix from STD mask:  ',ib,icountbad  ! TJ 07Sep
               jtop = min(i*nperrow,nactive)
             nrow = jtop - (i-1)*nperrow
 c              write(6,'(a,<nrow>(i4,a,i5,a,a9,a))') '    ',               ! JWF B60711; format repeats should
-              write(6,'(a,(i4,a,i5,a,a9,a))') '    ',                      !             work without this
+              write(6,'(a,(i6,a,i7,a,a9,a))') '    ',                      !             work without this
      1                (j,'=',pix_order(j,ib),':',basename(order(j)),', ', j=jbot,jtop)
             end do
           end do
@@ -5435,6 +5445,7 @@ c                  if (ib.eq.1) write (86,*) m,XSCprox(m)
      +   print *,'No. of complete solutions tossed:    ', NInt(fDup*nTossedItAll)         ! JWF B30402
         if (nFallbackMMM .gt. 0)                                                          ! JWF B30606
      +   print *,'No. of mmm fallbacks:                ', NInt(fDup*nFallbackMMM)         ! JWF B30606
+        print *,'No. of PM flux subtractions:         ', nPMsub ! JWF B91109
         print *,'WPHotpm terminating; istat =         ',istat   ! JWF B21204
         write (6,'(a,f10.3,a)')' total WPHot DTime ',dd,' sec'
 

@@ -128,37 +128,38 @@ c
 		    ra8 = ra8 + pmr*tframe(iframe)/cos(dtor*deccan(n))
 		    dec8 = dec8 + pmd*tframe(iframe)
 		endif
-                if (debug) then
-                  print *,'unspew_pm(128): doing blend component no.',n
-                  print *,'ra8,dec8:', ra8, dec8
-                end if
-        	offscl = -1
-        	call wcs2pix(iwcs, ra8, dec8, x8, y8, offscl)
-        	if (offscl .ne. 0) then
-		    xsource(n,iframe) = 1.
-		    ysource(n,iframe) = 1.
-        	else
-		    xsource(n,iframe) = x8
-		    ysource(n,iframe) = y8
-                    if (debug) print *,'iframe,x8,y8:',iframe,x8,y8 ! JWF dbg
+        if (debug) then
+          print *,'unspew_pm(128): doing blend component no.',n
+          print *,'ra8,dec8:', ra8, dec8
+          print *,'pmr, pmd, iframe, tframe(iframe):',pmr, pmd, iframe, tframe(iframe)
+        end if
+        offscl = -1
+        call wcs2pix(iwcs, ra8, dec8, x8, y8, offscl)
+        if (offscl .ne. 0) then
+		  xsource(n,iframe) = 1.
+		  ysource(n,iframe) = 1.
+        else
+		  xsource(n,iframe) = x8
+		  ysource(n,iframe) = y8
 		endif
-        	offscl = -1
-        	call wcs2pix(iwcs, ra8+dra, dec8, x8, y8, offscl)
-        	if (offscl .ne. 0) then
-		    xsourcep(n,iframe) = 1.
-		    ysourcep(n,iframe) = 1.
-        	else
-		    xsourcep(n,iframe) = x8
-		    ysourcep(n,iframe) = y8
+        if (debug) print *,'iframe,x8,y8:',iframe,x8,y8 ! JWF dbg
+        offscl = -1
+        call wcs2pix(iwcs, ra8+dra, dec8, x8, y8, offscl)
+        if (offscl .ne. 0) then
+		  xsourcep(n,iframe) = 1.
+		  ysourcep(n,iframe) = 1.
+        else
+		  xsourcep(n,iframe) = x8
+		  ysourcep(n,iframe) = y8
 		endif
-        	offscl = -1
-        	call wcs2pix(iwcs, ra8, dec8+ddec(ibq(iframe)), x8, y8, offscl)
-        	if (offscl .ne. 0) then
-		    xsourceq(n,iframe) = 1.
-		    ysourceq(n,iframe) = 1.
-        	else
-		    xsourceq(n,iframe) = x8
-		    ysourceq(n,iframe) = y8
+        offscl = -1
+        call wcs2pix(iwcs, ra8, dec8+ddec(ibq(iframe)), x8, y8, offscl)
+        if (offscl .ne. 0) then
+		  xsourceq(n,iframe) = 1.
+		  ysourceq(n,iframe) = 1.
+        else
+		  xsourceq(n,iframe) = x8
+		  ysourceq(n,iframe) = y8
 		endif
 	    enddo
 	enddo
